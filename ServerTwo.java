@@ -36,7 +36,7 @@ public class ServerTwo{
     
     public static void main(String[] args){
         // System.out.println("Hello World");
-        ServerOne serverOne =  new ServerOne();
-        serverOne.startServer();
+        ServerTwo serverTwo =  new ServerTwo();
+        serverTwo.startServer();
     }
 }
