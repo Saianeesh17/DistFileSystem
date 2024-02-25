@@ -23,7 +23,7 @@ public class ServerTwo{
             in = new BufferedReader(new InputStreamReader(server.getInputStream()));
             String greeting = in.readLine();
             if ("hello server".equals(greeting)) {
-                out.println("hello client");
+                out.println("Server2");
             }
             else {
                 out.println("unrecognised greeting");
