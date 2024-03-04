@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class LoadBalancer {
 
     private static final String IP = "127.0.0.1";
-    private static final int[] PORTS = {2025, 2026};
+    private static final int[] PORTS = {2025, 2026, 2028};
     static ServerSocket serverSocket;
     static Socket socket;
     static PrintWriter outToClient;
@@ -54,7 +54,7 @@ public class LoadBalancer {
             }
         }
 
-        outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1));
+        outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1) + " " + atomicMessages.get(2));
     }
 
 
@@ -75,7 +75,7 @@ public class LoadBalancer {
             System.out.println("Response from server to LoadBalancer on port " + port + ": " + response);
             int index = atomicCounter.getAndIncrement();
             atomicMessages.set(index, response);
-            System.out.println(index);
+            // System.out.println(index);
             
         } catch (IOException e) {
             System.err.println("Error pinging server to LoadBalncer on port " + port + ": " + e.getMessage());
