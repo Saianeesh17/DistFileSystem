@@ -18,15 +18,17 @@ public class ServerThree{
         try {
             serverSocket = new ServerSocket(this.port);
             System.out.println("Server listening on port" + port);
-            server = serverSocket.accept();
-            out = new PrintWriter(server.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(server.getInputStream()));
-            String greeting = in.readLine();
-            if ("hello server".equals(greeting)) {
-                out.println("Server3");
-            }
-            else {
-                out.println("unrecognised greeting");
+            while(true){
+                server = serverSocket.accept();
+                out = new PrintWriter(server.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(server.getInputStream()));
+                String greeting = in.readLine();
+                if ("hello server".equals(greeting)) {
+                    out.println("Server3");
+                }
+                else {
+                    out.println("unrecognised greeting");
+                }
             }
         }
         catch(Exception e) {

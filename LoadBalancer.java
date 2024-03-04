@@ -1,12 +1,6 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -15,68 +9,43 @@ public class LoadBalancer {
     private static final String IP = "127.0.0.1";
     private static final int[] PORTS = {2025, 2026, 2028};
     static ServerSocket serverSocket;
-    static Socket socket;
-    static PrintWriter outToClient;
-    static BufferedReader inFromClient;
-    static String[] messagesToClient = new String[10];
-    static AtomicReferenceArray<String> atomicMessages = 
-    new AtomicReferenceArray<String>(messagesToClient);
-    // static int counter= 0;
-    static AtomicInteger atomicCounter = 
-    new AtomicInteger(0);
+    // Removed static socket, outToClient, inFromClient, messagesToClient
 
-    public static void main(String[] args) {
-        String message = null;
-        try{
-            serverSocket = new ServerSocket(2027);
-            System.out.println("Load balancer on port " + 2027);
-            socket = serverSocket.accept();
-            inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            message = inFromClient.readLine();
-            outToClient = new PrintWriter(socket.getOutputStream(), true);
-        } catch (Exception e){
-            e.printStackTrace();
+    static AtomicReferenceArray<String> atomicMessages =
+            new AtomicReferenceArray<String>(10);
+    static AtomicInteger atomicCounter = new AtomicInteger(0);
+
+    public static void main(String[] args) throws IOException {
+        serverSocket = new ServerSocket(2027); // Create ServerSocket once
+        System.out.println("Load balancer on port " + 2027);
+
+        ExecutorService executor = Executors.newFixedThreadPool(PORTS.length);
+
+        while (true) { // Continuously accept requests
+            Socket socket = serverSocket.accept(); // Separate socket for each client
+            System.out.println("Client connected");
+            executor.submit(new processReq(socket)); // Handle requests in a separate thread
         }
-
-        if (message.equals("client1")){
-            // System.out.println("hello");
-            ExecutorService executor = Executors.newFixedThreadPool(PORTS.length);
-
-            for (int port : PORTS) {
-                executor.submit(() -> pingServer(IP, port)); // pings all the ports that are defined
-            }
-
-            executor.shutdown(); // Signal completion
-            try {
-                executor.awaitTermination(5, TimeUnit.SECONDS); // Wait for tasks to finish
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1) + " " + atomicMessages.get(2));
     }
-
 
     private static void pingServer(String ip, int port) {
         Socket clientSocket = null;
         PrintWriter out = null;
         BufferedReader in = null;
         String response = null;
-
+    
         try {
             clientSocket = new Socket(ip, port);
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
+    
             out.println("hello server"); // Send a message to initiate communication
             response = in.readLine();
-
+    
             System.out.println("Response from server to LoadBalancer on port " + port + ": " + response);
             int index = atomicCounter.getAndIncrement();
             atomicMessages.set(index, response);
-            // System.out.println(index);
-            
+    
         } catch (IOException e) {
             System.err.println("Error pinging server to LoadBalncer on port " + port + ": " + e.getMessage());
         } finally {
@@ -91,6 +60,37 @@ public class LoadBalancer {
                     clientSocket.close();
                 }
             } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static class processReq implements Runnable {
+        Socket socket;
+
+        public processReq(Socket socket) {
+            this.socket = socket;
+        }
+
+        public void run() {
+            try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                 PrintWriter outToClient = new PrintWriter(socket.getOutputStream(), true)) {
+
+                String message = inFromClient.readLine();
+
+                if (message.equals("client1")) {
+                    ExecutorService executor = Executors.newFixedThreadPool(PORTS.length);
+
+                    for (int port : PORTS) {
+                        executor.submit(() -> pingServer(IP, port)); // Ping servers concurrently
+                    }
+
+                    executor.shutdown();
+                    executor.awaitTermination(5, TimeUnit.SECONDS);
+
+                    outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1) + " " + atomicMessages.get(2));
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
