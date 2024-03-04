@@ -45,7 +45,7 @@ public class Client {
     public static void main(String[] args){
         Client client = new Client();
         client.startConnection("127.0.0.1", 2027);
-        String response = client.sendMessage("client1");
+        String response = client.sendMessage("client3");
         System.out.println(response);
     }
 }
