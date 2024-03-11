@@ -76,8 +76,7 @@ public class LoadBalancer {
 
     static class processReq implements Runnable {
         Socket socket;
-        // ArrayList<Integer> putPorts = findLowestIndexes(serverLoads);
-        ArrayList<Integer> putPorts = new ArrayList<Integer>(3);
+        ArrayList<Integer> putPorts = findLowestIndexes(serverLoads);
         // String[] emptyMessages = new String[10];
         // atomicMessages.set(emptyMessages);
         //
@@ -87,9 +86,6 @@ public class LoadBalancer {
         }
 
         public void run() {
-            putPorts.add(0);
-            putPorts.add(1);
-            putPorts.add(2);
             // putPorts.add(1);
             // putPorts.add(2);
             for (int i = 0; i < atomicMessages.length(); i++) {
@@ -98,7 +94,6 @@ public class LoadBalancer {
             atomicCounter.set(0);
             System.out.println("Content of ports to upload message to: " + putPorts);
             try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            // try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     PrintWriter outToClient = new PrintWriter(socket.getOutputStream(), true)) {
 
                 String message = inFromClient.readLine();
@@ -118,7 +113,7 @@ public class LoadBalancer {
                     executor.shutdown();
                     executor.awaitTermination(5, TimeUnit.SECONDS);
 
-                    outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1)+" " + atomicMessages.get(2)); // " " +
+                    outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1)); // " " +
                                                                                               // atomicMessages.get(2)
                 }
             } catch (Exception e) {
