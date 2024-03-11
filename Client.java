@@ -43,8 +43,9 @@ public class Client {
     }
 
     public static void main(String[] args){
+        String serverAddress = "127.0.0.1";
         Client client = new Client();
-        client.startConnection("127.0.0.1", 2027);
+        client.startConnection(serverAddress, 2027);
         String response = client.sendMessage("client3");
         System.out.println(response);
     }

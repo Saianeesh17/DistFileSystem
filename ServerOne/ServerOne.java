@@ -1,15 +1,16 @@
+package ServerOne;
 import java.io.*;
 import java.net.*;
 
-public class ServerThree{
+public class ServerOne{
 
-    int port = 2028;
+    int port = 2025;
     Socket server;
     ServerSocket serverSocket;
     PrintWriter out;
     BufferedReader in;
     
-    public ServerThree(){
+    public ServerOne(){
         
         
     }
@@ -24,7 +25,7 @@ public class ServerThree{
                 in = new BufferedReader(new InputStreamReader(server.getInputStream()));
                 String greeting = in.readLine();
                 if ("hello server".equals(greeting)) {
-                    out.println("Server3");
+                    out.println("Server1");
                 }
                 else {
                     out.println("unrecognised greeting");
@@ -38,7 +39,7 @@ public class ServerThree{
     
     public static void main(String[] args){
         // System.out.println("Hello World");
-        ServerThree serverThree =  new ServerThree();
-        serverThree.startServer();
+        ServerOne serverOne =  new ServerOne();
+        serverOne.startServer();
     }
 }
