@@ -27,7 +27,7 @@ public class ServerOne{
                 dis = new DataInputStream(server.getInputStream());
                 dos = new DataOutputStream(server.getOutputStream());
                 
-                receiveFile(saveDirectory + "large.jpg");
+                receiveFile(saveDirectory + dis.readUTF());
 
                 dis.close();
                 dos.close();

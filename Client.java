@@ -32,6 +32,7 @@ public class Client {
         long fileSize = file.length();
     
         try {
+            out.writeUTF(file.getName());
             // Send file size
             out.writeLong(fileSize);
     
@@ -39,7 +40,6 @@ public class Client {
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
-                out.flush();
             }
         } finally {
             fileInputStream.close();
@@ -70,5 +70,13 @@ public class Client {
         }
         stopConnection();
         // System.out.println(response);
+        client.startConnection(serverAddress, 2025);
+        try {
+            sendFile("test.txt");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        stopConnection();
     }
 }
