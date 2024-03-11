@@ -39,17 +39,28 @@ public class LoadBalancer {
 
     private static void pingServer(String ip, int port) {
         Socket clientSocket = null;
-        PrintWriter out = null;
-        BufferedReader in = null;
+        // PrintWriter out = null;
+        DataOutputStream out = null;
+        // BufferedReader in = null;
+        DataInputStream in = null;
         String response = null;
 
         try {
             clientSocket = new Socket(ip, port);
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            // out = new PrintWriter(clientSocket.getOutputStream(), true);
+            // in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            in = new DataInputStream(socket.getInputStream());
+            out = new DataOutputStream(socket.getOutputStream());
 
             out.println("hello server"); // Send a message to initiate communication
-            response = in.readLine();
+            // response = in.readLine();
+            while (true){
+                // String message = 
+                // dataOutputStream.writeUTF(out.);
+                System.out.print();
+                if(message.equalsIgnoreCase("exit()"))
+                    break;
+            }
 
             System.out.println("Response from server to LoadBalancer on port " + port + ": " + response);
             int index = atomicCounter.getAndIncrement();
@@ -97,66 +108,121 @@ public class LoadBalancer {
             }
             atomicCounter.set(0);
             System.out.println("Content of ports to upload message to: " + putPorts);
-            try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             // try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter outToClient = new PrintWriter(socket.getOutputStream(), true)) {
 
-                String message = inFromClient.readLine();
+            //
 
-                if (message.equals("client1") || message.equals("client2") || message.equals("client3")) {
-                    ExecutorService executor = Executors.newFixedThreadPool(putPorts.size());
+            try (
+                DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+                DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+                FileOutputStream fileOutputStream = new FileOutputStream("large.jpg") // Replace with desired filename
+            ) {
+                // Receive file size
+                long fileSize = in.readLong();
+                System.out.println("Receiving file of size: " + fileSize + " bytes");
 
-                    for (int port : putPorts) {
-                        executor.submit(() -> pingServer(IP, PORTS[port])); // Ping servers concurrently
-                        serverLoads[port]++;
-                        messageList.put(message, putPorts);
+                // Receive file content
+                byte[] buffer = new byte[4 * 1024];
+                long totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    fileOutputStream.write(buffer, 0, bytesRead);
+                    for (int p : PORTS){
+                        Socket server_socket = new Socket(ip, p);
+                        DataOutputStream data_to_server = new DataOutputStream(server_socket.getOutputStream());
+                        data_to_server.write(buffer, 0, bytesRead);
                     }
-                    ArrayList<Integer> testList = messageList.get(message);
+                    totalBytesRead += bytesRead;
 
-                    System.out.println("content of the hashtable for new message: " + testList);
-
-                    executor.shutdown();
-                    executor.awaitTermination(5, TimeUnit.SECONDS);
-
-                    outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1)+" " + atomicMessages.get(2)); // " " +
-                                                                                              // atomicMessages.get(2)
+                    if (totalBytesRead == fileSize) {
+                        break; // Break loop when all bytes received
+                    }
                 }
-            } catch (Exception e) {
+
+                System.out.println("File received successfully");
+                out.writeUTF("File received successfully");
+            } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                clientSocket.close();
             }
+
+
+
+            // try (DataInputStream inFromClient = new DataInputStream(new InputStreamReader(socket.getInputStream()));
+            //         // PrintWriter outToClient = new PrintWriter(socket.getOutputStream(), true)) {
+            //         DataOutputStream outToClient = new DataOutputStream(socket.getOutputStream())) {
+
+            //     // Take in message from the client
+
+            //     // String message = inFromClient.readLine();
+            //     String message;
+
+            //     while (true){
+            //         message = inFromClient.readUTF();
+            //         System.out.println(message);
+            //         if(message.equalsIgnoreCase("exit()")){
+            //             break;
+            //         }
+            //     }
+
+            //     
+
+            //     // if (message.equals("client1") || message.equals("client2") || message.equals("client3")) {
+            //     ExecutorService executor = Executors.newFixedThreadPool(putPorts.size());
+
+            //     for (int port : putPorts) {
+            //         executor.submit(() -> pingServer(IP, PORTS[port])); // Ping servers concurrently
+            //         serverLoads[port]++;
+            //         // messageList.put(message, putPorts);
+            //     }
+            //     ArrayList<Integer> testList = messageList.get(message);
+
+            //     // System.out.println("content of the hashtable for new message: " + testList);
+
+            //     executor.shutdown();
+            //     executor.awaitTermination(5, TimeUnit.SECONDS);
+
+            //     outToClient.println(atomicMessages.get(0) + " " + atomicMessages.get(1)+" " + atomicMessages.get(2)); // " " +
+            //                                                                                   // atomicMessages.get(2)
+            //     // }
+            // } catch (Exception e) {
+            //     e.printStackTrace();
+            // }
         }
 
-        public static ArrayList<Integer> findLowestIndexes(int[] array) {
-            if (array == null || array.length == 0) {
-                return new ArrayList<>();
-            }
+        // public static ArrayList<Integer> findLowestIndexes(int[] array) {
+        //     if (array == null || array.length == 0) {
+        //         return new ArrayList<>();
+        //     }
 
-            int[] sortedArray = Arrays.copyOf(array, array.length);
-            Arrays.sort(sortedArray);
+        //     int[] sortedArray = Arrays.copyOf(array, array.length);
+        //     Arrays.sort(sortedArray);
 
-            // Get the lowest value
-            int lowestValue = sortedArray[0];
+        //     // Get the lowest value
+        //     int lowestValue = sortedArray[0];
 
-            // Find the first two indexes of the lowest value
-            ArrayList<Integer> lowestIndexes = new ArrayList<>();
-            int count = 0;
-            for (int i = 0; i < array.length && count < 2; i++) {
-                if (array[i] == lowestValue) {
-                    lowestIndexes.add(i);
-                    count++;
-                }
-            }
-            if (lowestIndexes.size() != 2) {
-                int test = lowestIndexes.get(0);
-                test++;
-                if (test > array.length - 1) {
-                    test = 0;
-                }
-                lowestIndexes.add(test);
-            }
+        //     // Find the first two indexes of the lowest value
+        //     ArrayList<Integer> lowestIndexes = new ArrayList<>();
+        //     int count = 0;
+        //     for (int i = 0; i < array.length && count < 2; i++) {
+        //         if (array[i] == lowestValue) {
+        //             lowestIndexes.add(i);
+        //             count++;
+        //         }
+        //     }
+        //     if (lowestIndexes.size() != 2) {
+        //         int test = lowestIndexes.get(0);
+        //         test++;
+        //         if (test > array.length - 1) {
+        //             test = 0;
+        //         }
+        //         lowestIndexes.add(test);
+        //     }
 
-            return lowestIndexes;
-        }
+        //     return lowestIndexes;
+        // }
 
     }
 }
