@@ -39,6 +39,7 @@ public class Client {
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
+                out.flush();
             }
         } finally {
             fileInputStream.close();
