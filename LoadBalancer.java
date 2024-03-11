@@ -97,56 +97,111 @@ public class LoadBalancer {
             this.socket = socket;
         }
 
-        public void run() {
-            putPorts.add(0);
-            putPorts.add(1);
-            putPorts.add(2);
-            // putPorts.add(1);
-            // putPorts.add(2);
-            for (int i = 0; i < atomicMessages.length(); i++) {
-                atomicMessages.getAndSet(i, null);
+    public void run() {
+          try (
+              DataInputStream in = new DataInputStream(socket.getInputStream());
+              DataOutputStream out = new DataOutputStream(socket.getOutputStream())
+          ) {
+            // Receive file size
+            long fileSize = in.readLong();
+            System.out.println("Receiving file of size: " + fileSize + " bytes");
+
+            // Receive file content in chunks
+            byte[] buffer = new byte[4 * 1024];
+            long totalBytesRead = 0;
+            int bytesRead;
+
+            ArrayList<Socket> serverSockets = new ArrayList<>();
+            ArrayList<DataOutputStream> dataToServers = new ArrayList<>();
+
+            // Open connections to all servers
+            for (int p : PORTS) {
+              serverSockets.add(new Socket(IP, p));
+              dataToServers.add(new DataOutputStream(serverSockets.get(p).getOutputStream()));
             }
-            atomicCounter.set(0);
-            System.out.println("Content of ports to upload message to: " + putPorts);
-            // try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            //
+            while ((bytesRead = in.read(buffer)) != -1) {
+              totalBytesRead += bytesRead;
 
-            try (
-                DataInputStream in = new DataInputStream(clientSocket.getInputStream());
-                DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
-                FileOutputStream fileOutputStream = new FileOutputStream("large.jpg") // Replace with desired filename
-            ) {
-                // Receive file size
-                long fileSize = in.readLong();
-                System.out.println("Receiving file of size: " + fileSize + " bytes");
+              // Send data chunk to all servers concurrently
+              for (int i = 0; i < PORTS.length; i++) {
+                dataToServers.get(i).write(buffer, 0, bytesRead);
+              }
 
-                // Receive file content
-                byte[] buffer = new byte[4 * 1024];
-                long totalBytesRead = 0;
-                int bytesRead;
+              if (totalBytesRead == fileSize) {
+                break;
+              }
+            }
 
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    fileOutputStream.write(buffer, 0, bytesRead);
-                    for (int p : PORTS){
-                        Socket server_socket = new Socket(ip, p);
-                        DataOutputStream data_to_server = new DataOutputStream(server_socket.getOutputStream());
-                        data_to_server.write(buffer, 0, bytesRead);
-                    }
-                    totalBytesRead += bytesRead;
+            // Close server connections
+            for (Socket serverSocket : serverSockets) {
+              serverSocket.close();
+            }
 
-                    if (totalBytesRead == fileSize) {
-                        break; // Break loop when all bytes received
-                    }
-                }
+            System.out.println("File received successfully");
+            out.writeUTF("File received successfully");
 
-                System.out.println("File received successfully");
-                out.writeUTF("File received successfully");
+          } catch (IOException e) {
+            e.printStackTrace();
+          } finally {
+            try {
+              socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                clientSocket.close();
+              e.printStackTrace();
             }
+          }
+        }
+
+        // public void run() {
+        //     putPorts.add(0);
+        //     putPorts.add(1);
+        //     putPorts.add(2);
+        //     // putPorts.add(1);
+        //     // putPorts.add(2);
+        //     for (int i = 0; i < atomicMessages.length(); i++) {
+        //         atomicMessages.getAndSet(i, null);
+        //     }
+        //     atomicCounter.set(0);
+        //     System.out.println("Content of ports to upload message to: " + putPorts);
+        //     // try (BufferedReader inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+        //     //
+
+        //     try (
+        //         DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+        //         DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream());
+        //         FileOutputStream fileOutputStream = new FileOutputStream("large.jpg") // Replace with desired filename
+        //     ) {
+        //         // Receive file size
+        //         long fileSize = in.readLong();
+        //         System.out.println("Receiving file of size: " + fileSize + " bytes");
+
+        //         // Receive file content
+        //         byte[] buffer = new byte[4 * 1024];
+        //         long totalBytesRead = 0;
+        //         int bytesRead;
+
+        //         while ((bytesRead = in.read(buffer)) != -1) {
+        //             fileOutputStream.write(buffer, 0, bytesRead);
+        //             for (int p : PORTS){
+        //                 Socket server_socket = new Socket(ip, p);
+        //                 DataOutputStream data_to_server = new DataOutputStream(server_socket.getOutputStream());
+        //                 data_to_server.write(buffer, 0, bytesRead);
+        //             }
+        //             totalBytesRead += bytesRead;
+
+        //             if (totalBytesRead == fileSize) {
+        //                 break; // Break loop when all bytes received
+        //             }
+        //         }
+
+        //         System.out.println("File received successfully");
+        //         out.writeUTF("File received successfully");
+        //     } catch (IOException e) {
+        //         e.printStackTrace();
+        //     } finally {
+        //         clientSocket.close();
+        //     }
 
 
 
