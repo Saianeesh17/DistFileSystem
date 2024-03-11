@@ -10,6 +10,8 @@ public class ServerOne{
     PrintWriter out;
     BufferedReader in;
     String saveDirectory = "./received_files/";
+    private static DataOutputStream dos = null;
+    private static DataInputStream dis = null;
     
     public ServerOne(){
         
@@ -22,22 +24,13 @@ public class ServerOne{
             System.out.println("Server listening on port" + port);
             while(true){
                 server = serverSocket.accept();
-                DataInputStream dis = new DataInputStream(server.getInputStream());
+                dis = new DataInputStream(server.getInputStream());
+                dos = new DataOutputStream(server.getOutputStream());
                 
-                String filePath = saveDirectory + "large.jpg";
-                
-                FileOutputStream fos = new FileOutputStream(filePath);
+                receiveFile(saveDirectory + "large.jpg");
 
-                long fileSize = dis.readLong();
-                byte[] buffer = new byte[4096];
-
-                int bytesRead;
-                while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize))) != -1) {
-                    fos.write(buffer, 0, bytesRead);
-                    fileSize -= bytesRead;
-                }
-
-                fos.close();
+                dis.close();
+                dos.close();
             }
         }
         catch(Exception e) {
@@ -45,6 +38,18 @@ public class ServerOne{
         }
     }
     
+    private static void receiveFile(String filePath) throws Exception{
+        FileOutputStream fos = new FileOutputStream(filePath);
+        long fileSize = dis.readLong();
+        byte[] buffer = new byte[4096];
+
+        int bytesRead;
+        while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize))) != -1) {
+            fos.write(buffer, 0, bytesRead);
+            fileSize -= bytesRead;
+        }
+        fos.close();
+    }
 
     public static void main(String[] args){
         // System.out.println("Hello World");
