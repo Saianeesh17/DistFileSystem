@@ -9,6 +9,7 @@ public class ServerOne{
     ServerSocket serverSocket;
     PrintWriter out;
     BufferedReader in;
+    String saveDirectory = "./received_files/";
     
     public ServerOne(){
         
@@ -21,15 +22,22 @@ public class ServerOne{
             System.out.println("Server listening on port" + port);
             while(true){
                 server = serverSocket.accept();
-                out = new PrintWriter(server.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(server.getInputStream()));
-                String greeting = in.readLine();
-                if ("hello server".equals(greeting)) {
-                    out.println("Server1");
+                DataInputStream dis = new DataInputStream(server.getInputStream());
+                
+                String filePath = saveDirectory + "large.jpg";
+                
+                FileOutputStream fos = new FileOutputStream(filePath);
+
+                long fileSize = dis.readLong();
+                byte[] buffer = new byte[4096];
+
+                int bytesRead;
+                while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize))) != -1) {
+                    fos.write(buffer, 0, bytesRead);
+                    fileSize -= bytesRead;
                 }
-                else {
-                    out.println("unrecognised greeting");
-                }
+
+                fos.close();
             }
         }
         catch(Exception e) {
@@ -37,6 +45,7 @@ public class ServerOne{
         }
     }
     
+
     public static void main(String[] args){
         // System.out.println("Hello World");
         ServerOne serverOne =  new ServerOne();
