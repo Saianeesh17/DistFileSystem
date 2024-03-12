@@ -35,8 +35,10 @@ public class ServerOne{
                 switch(request){
                     case "UPLOAD":
                         receiveFile(saveDirectory + dis.readUTF());
+                        System.out.println("File successfully sent !");
                     break;
                     case "STATUS":
+                        System.out.println("Checking server's status\n");
                         statusCheck(server);
                     break;
                     default:
@@ -44,8 +46,8 @@ public class ServerOne{
 
                 }
                 
-                dis.close();
-                dos.close();
+                //dis.close();
+                //dos.close();
             }
         }
         catch(Exception e) {

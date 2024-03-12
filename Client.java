@@ -3,6 +3,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -32,7 +33,9 @@ public class Client {
         long fileSize = file.length();
     
         try {
+            // Send action to server
             out.writeUTF("UPLOAD");
+            // Send file name
             out.writeUTF(file.getName());
             // Send file size
             out.writeLong(fileSize);
@@ -44,6 +47,24 @@ public class Client {
             }
         } finally {
             fileInputStream.close();
+        }
+    }
+
+    public static void checkServerStatus() throws IOException {
+        // Send status check request
+        out.writeUTF("STATUS");
+
+        // Receive and print the string array
+        int arrayLength = in.readInt();
+        String[] documentNames = new String[arrayLength];
+        for (int i = 0; i < arrayLength; i++) {
+            documentNames[i] = in.readUTF();
+        }
+
+        // Print the received array
+        System.out.println("Documents on server:");
+        for (String documentName : documentNames) {
+            System.out.println(documentName);
         }
     }
     
@@ -64,20 +85,12 @@ public class Client {
         Client client = new Client();
         client.startConnection(serverAddress, 2025);
         try {
-            sendFile("large.jpg");
+            checkServerStatus();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
         stopConnection();
         // System.out.println(response);
-        client.startConnection(serverAddress, 2025);
-        try {
-            sendFile("test.txt");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        stopConnection();
     }
 }
