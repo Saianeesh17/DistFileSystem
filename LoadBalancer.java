@@ -2,59 +2,46 @@ import java.io.*;
 import java.net.*;
 
 public class LoadBalancer {
+    private static final int PORT = 2027;
+    private static final int[] SERVER_PORTS = {2025, 2026, 2028};
+    private static final String[] SERVER_HOSTS = {"localhost", "localhost", "localhost"};
 
-    private static final int PORT = 2027; // Replace with your desired port number
-    // private static final String[] SERVER_ADDRESSES = {"localhost:8080", "localhost:8081", "localhost:8082"}; // Server addresses and ports
-    private static final String[] SERVER_ADDRESSES = {"localhost:2025"};
-
-    public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(PORT);
-
-        while (true) {
-            // Accept client connection
-            Socket clientSocket = serverSocket.accept();
-
-            // Read file information from client
-            DataInputStream clientInput = new DataInputStream(clientSocket.getInputStream());
-            String fileName = clientInput.readUTF();
-
-            // Send file data to each server in separate threads
-            for (String serverAddress : SERVER_ADDRESSES) {
-                new Thread(() -> sendFileToServer(clientSocket, serverAddress, fileName)).start();
-            }
-
-            // No need to close client connection as data transfer happens within threads
-        }
-    }
-
-    private static void sendFileToServer(Socket clientSocket, String serverAddress, String fileName) {
+    public static void main(String[] args) {
         try {
-            // Extract server hostname and port
-            String[] parts = serverAddress.split(":");
-            String host = parts[0];
-            int port = Integer.parseInt(parts[1]);
+            ServerSocket serverSocket = new ServerSocket(PORT);
+            System.out.println("Load balancer running on port " + PORT);
 
-            // Open socket connection to server
-            Socket serverSocket = new Socket(host, port);
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("New client connected");
 
-            // Forward file data from client to server (replace with efficient transfer logic)
-            DataOutputStream serverOutput = new DataOutputStream(serverSocket.getOutputStream());
-            serverOutput.writeUTF(fileName);
-            forwardStream(clientSocket.getInputStream(), serverOutput);
+                // Accept filename, filesize, and file from the client
+                DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+                String filename = dis.readUTF();
+                long filesize = dis.readLong();
 
-            // Close server connection
-            serverSocket.close();
+                byte[] fileContent = new byte[(int) filesize];
+                dis.readFully(fileContent); // Read the file content into memory
+
+                for (int i = 0; i < SERVER_PORTS.length; i++) {
+                    // Connect to each server
+                    Socket serverSocketConnection = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                    System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+
+                    // Transfer the filename, filesize, and file to the server
+                    DataOutputStream dos = new DataOutputStream(serverSocketConnection.getOutputStream());
+                    dos.writeUTF(filename);
+                    dos.writeLong(filesize);
+                    dos.write(fileContent); // Write the file content to the server
+
+                    serverSocketConnection.close();
+                }
+
+                clientSocket.close();
+                System.out.println("File transferred to all servers");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static void forwardStream(InputStream inputStream, OutputStream outputStream) throws IOException {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, bytesRead);
-        }
-        outputStream.flush();
     }
 }

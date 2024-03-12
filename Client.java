@@ -61,7 +61,7 @@ public class Client {
     public static void main(String[] args){
         String serverAddress = "127.0.0.1";
         Client client = new Client();
-        client.startConnection(serverAddress, 2025);
+        client.startConnection(serverAddress, 2027);
         try {
             sendFile("large.jpg");
         } catch (Exception e) {
@@ -70,7 +70,7 @@ public class Client {
         }
         stopConnection();
         // System.out.println(response);
-        client.startConnection(serverAddress, 2025);
+        client.startConnection(serverAddress, 2027);
         try {
             sendFile("test.txt");
         } catch (Exception e) {

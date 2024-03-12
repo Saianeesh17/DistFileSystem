@@ -1,4 +1,4 @@
-// package ServerTwo;
+package ServerTwo;
 import java.io.*;
 import java.net.*;
 
@@ -9,6 +9,9 @@ public class ServerTwo{
     ServerSocket serverSocket;
     PrintWriter out;
     BufferedReader in;
+    String saveDirectory = "./received_files/";
+    private static DataOutputStream dos = null;
+    private static DataInputStream dis = null;
     
     public ServerTwo(){
         
@@ -21,15 +24,13 @@ public class ServerTwo{
             System.out.println("Server listening on port" + port);
             while(true){
                 server = serverSocket.accept();
-                out = new PrintWriter(server.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(server.getInputStream()));
-                String greeting = in.readLine();
-                if ("hello server".equals(greeting)) {
-                    out.println("Server2");
-                }
-                else {
-                    out.println("unrecognised greeting");
-                }   
+                dis = new DataInputStream(server.getInputStream());
+                dos = new DataOutputStream(server.getOutputStream());
+                
+                receiveFile(saveDirectory + dis.readUTF());
+
+                dis.close();
+                dos.close();
             }
         }
         catch(Exception e) {
@@ -37,9 +38,22 @@ public class ServerTwo{
         }
     }
     
+    private static void receiveFile(String filePath) throws Exception{
+        FileOutputStream fos = new FileOutputStream(filePath);
+        long fileSize = dis.readLong();
+        byte[] buffer = new byte[4096];
+
+        int bytesRead;
+        while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize))) != -1) {
+            fos.write(buffer, 0, bytesRead);
+            fileSize -= bytesRead;
+        }
+        fos.close();
+    }
+
     public static void main(String[] args){
         // System.out.println("Hello World");
-        ServerTwo serverTwo =  new ServerTwo();
+        ServerTwo serverTwo = new ServerTwo();
         serverTwo.startServer();
     }
 }
