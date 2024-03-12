@@ -35,10 +35,10 @@ public class ServerOne{
                 switch(request){
                     case "UPLOAD":
                         receiveFile(saveDirectory + dis.readUTF());
-                        System.out.println("File successfully sent !");
+                        System.out.println("File successfully received !");
                     break;
                     case "STATUS":
-                        System.out.println("Checking server's status\n");
+                        System.out.println("Checking server's status");
                         statusCheck(server);
                     break;
                     default:

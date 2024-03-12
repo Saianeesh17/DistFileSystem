@@ -86,6 +86,8 @@ public class Client {
         client.startConnection(serverAddress, 2025);
         try {
             checkServerStatus();
+            sendFile("test.txt");
+            
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
