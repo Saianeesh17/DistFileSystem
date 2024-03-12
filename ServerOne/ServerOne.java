@@ -56,8 +56,8 @@ public class ServerOne{
     private static void statusCheck(Socket clientSocket) throws IOException{
         // Get files name and put them into an array
         String[] filesArray = getFilesArray();
-
-        //Sending the array back
+        Arrays.sort(filesArray);
+        //Sending the sorted array back
         dos.writeInt(filesArray.length);
         for (String name : filesArray) {
             dos.writeUTF(name);
