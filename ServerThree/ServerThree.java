@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ServerThree{
-
+    private static boolean isLeader = false;
     int port = 2028;
     Socket server;
     ServerSocket serverSocket;
@@ -42,6 +42,7 @@ public class ServerThree{
                         statusCheck(server);
                     break;
                     default:
+                    //  GET filename (only if isLeader)
                     System.out.println("Wrong request!\n");
 
                 }

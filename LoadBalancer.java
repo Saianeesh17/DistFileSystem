@@ -77,7 +77,7 @@ public class LoadBalancer {
 
     public static class ReqStatus extends TimerTask{
 
-        public int leader = 0;
+        public static int leader = 0;
 
         static String[][] fileContents = new String[3][];
 
@@ -122,11 +122,19 @@ public class LoadBalancer {
 
                     serverSocketConnection.close();
                 }
-                // if(!compareArrays(fileContents[0], fileContents[1], fileContents[2])){
-                //     // detect the missing file(s)
-                // };
-                System.out.println(compareArrays(fileContents[0], fileContents[1], fileContents[2]));
-                // Send status check request
+
+
+                if(!compareArrays(fileContents[0], fileContents[1], fileContents[2])){
+                    // detect the missing file(s)
+                    for (int i = 0; i < fileContents[0].length; i++){
+                        if (!fileContents[(leader + 1) % 3][i].equals(fileContents[leader][i])) {
+                            
+                        }
+                        if (!fileContents[(leader + 2) % 3][i].equals(fileContents[leader][i])) {
+                            
+                        }
+                    }
+                };
             
         }
 
