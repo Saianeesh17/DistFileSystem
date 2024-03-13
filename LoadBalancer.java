@@ -150,6 +150,10 @@ public class LoadBalancer {
                 // String[] arr4 = {"value1", "value3", "value4"};
                 String[][] server_2_update = compareArrays(fileContents[0], fileContents[1]);
                 String[][] server_3_update = compareArrays(fileContents[0], fileContents[2]);
+
+                for (int i=0; i < server_2_update[0].length; i++){
+                System.out.println(server_2_update[0][i]);
+            }
             
         }
 
