@@ -6,20 +6,25 @@ public class LoadBalancer {
     public static final int[] SERVER_PORTS = {2025, 2026, 2028};
     public static final String[] SERVER_HOSTS = {"localhost", "localhost", "localhost"};
 
-    public static void main(String[] args) {
-        // ProcessReq processReq = 
-        Thread t = new Thread(new ProcessReq());
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket;
+        serverSocket = new ServerSocket(PORT);
+        System.out.println("Load balancer running on port " + PORT);
+        Thread t = new Thread(new ProcessReq(serverSocket));
         t.start();
     }
 
     public static class ProcessReq implements Runnable{
+        ServerSocket serverSocket;
+        public ProcessReq(ServerSocket serverSocket){
+            this.serverSocket = serverSocket;
+        }
 
         @Override
         public void run() {
             // TODO Auto-generated method stub
             try {
-                ServerSocket serverSocket = new ServerSocket(PORT);
-                System.out.println("Load balancer running on port " + PORT);
+                
     
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
