@@ -149,6 +149,21 @@ public class LoadBalancer {
                 }
             }
 
+            // ArrayList<Integer> active_ports = new ArrayList<>();
+            // ArrayList<String> active_hosts = new ArrayList<>();
+            // ArrayList<String[]> fileContents = new ArrayList<>();
+            for (int i = 0; i < active_ports.size(); i++){
+                System.out.println("Active host: " + active_hosts.get(i) + ", port: " + active_ports.get(i));
+            }
+            System.out.print("Files in server:\n");
+            for ( String[] content : fileContents){
+                for ( String filename : content){
+                    System.out.println(filename);
+                }
+            }
+
+            
+            
             // HashMap<Integer, String[][]> differences = new HashMap<>();
             // if (!fileContents[(leader + 1) % 3].equals(fileContents[leader])) {
             //     differences.put((leader + 1) % 3, compareArrays(fileContents[leader], fileContents[(leader + 1) % 3]));
