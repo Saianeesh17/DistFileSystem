@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.*;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class LoadBalancer {
     public static final int PORT = 2027;
@@ -12,6 +14,9 @@ public class LoadBalancer {
         System.out.println("Load balancer running on port " + PORT);
         Thread t = new Thread(new ProcessReq(serverSocket));
         t.start();
+        Timer timer = new Timer();
+        reqStatus task = new reqStatus();        
+        timer.schedule(task, 0, 5000);
     }
 
     public static class ProcessReq implements Runnable{
@@ -25,11 +30,10 @@ public class LoadBalancer {
             // TODO Auto-generated method stub
             try {
                 
-    
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("New client connected");
-    
+        
                     // Accept filename, filesize, and file from the client
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
                     String filename = dis.readUTF();
@@ -61,6 +65,16 @@ public class LoadBalancer {
             
         }
     
+    }
+
+    public static class reqStatus extends TimerTask{
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            System.out.println("Hello World");
+        }
+
     }
 }
 
