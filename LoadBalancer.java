@@ -126,12 +126,6 @@ public class LoadBalancer {
                     serverSocketConnection.close();
                 }
 
-                String[][] server_2_update = compareArrays(fileContents[0], fileContents[1]);
-                String[][] server_3_update = compareArrays(fileContents[0], fileContents[2]);
-
-                // for (int i=0; i < server_2_update[0].length; i++){
-                //     System.out.println(server_2_update[0][i]);
-                // }
                 HashMap<Integer, String[][]> differences = new HashMap<>();
                 if (!fileContents[(leader + 1) % 3].equals(fileContents[leader])) {
                     differences.put((leader + 1) % 3, compareArrays(fileContents[leader], fileContents[(leader + 1) % 3]));
@@ -140,10 +134,7 @@ public class LoadBalancer {
                     differences.put((leader + 2) % 3, compareArrays(fileContents[leader], fileContents[(leader + 2) % 3]));
                 }
 
-                // for (String[][] i : differences.values()){
-                //     System.out.println(i[0][0]);
-                //     System.out.println(i[0][1]);
-                // }
+                
             
         }
 
