@@ -45,6 +45,7 @@ public class ServerOne{
                         deleteFile(saveDirectory + dis.readUTF());
                     break;
                     case "GET":
+                        
 
                     break;
                     default:
@@ -65,6 +66,7 @@ public class ServerOne{
         File fileToDelete = new File(filePath);
         if(fileToDelete.exists()){
             fileToDelete.delete();
+            System.out.println("File deleted");
         }
     }
 

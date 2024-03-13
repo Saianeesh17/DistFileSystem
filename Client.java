@@ -46,6 +46,13 @@ public class Client {
             fileInputStream.close();
         }
     }
+
+    public static void deleteFile(String filename) throws Exception {  
+        out.writeUTF("DELETE");
+        out.writeUTF(filename);
+
+    }
+    
     
 
     public static void stopConnection() {
@@ -62,9 +69,9 @@ public class Client {
     public static void main(String[] args){
         String serverAddress = "127.0.0.1";
         Client client = new Client();
-        client.startConnection(serverAddress, 2027);
+        client.startConnection(serverAddress, 2025);
         try {
-            sendFile("large.jpg");
+            deleteFile("test.txt");
             
         } catch (Exception e) {
             // TODO Auto-generated catch block
@@ -72,11 +79,11 @@ public class Client {
         }
         stopConnection();
         // System.out.println(response);
-        client.startConnection(serverAddress, 2027);
+        client.startConnection(serverAddress, 2025);
         
         try {
             
-            sendFile("test.txt");
+            sendFile("large.jpg");
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
