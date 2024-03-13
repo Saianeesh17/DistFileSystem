@@ -3,6 +3,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -10,16 +11,17 @@ import java.net.Socket;
 public class Client {
     
     private static Socket clientSocket;
-    private static DataOutputStream out;
-    private static DataInputStream in;
+    private static DataOutputStream dos;
+    private static DataInputStream dis;
     private String resp;
+    static String saveDirectory = "./client_received_files/";
 
     public void startConnection(String ip, int port) {
         
         try{
             clientSocket = new Socket(ip, port);
-            out = new DataOutputStream(clientSocket.getOutputStream());
-            in = new DataInputStream(clientSocket.getInputStream());
+            dos = new DataOutputStream(clientSocket.getOutputStream());
+            dis = new DataInputStream(clientSocket.getInputStream());
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -32,25 +34,40 @@ public class Client {
         long fileSize = file.length();
     
         try {
-            out.writeUTF("UPLOAD");
-            out.writeUTF(file.getName());
+            dos.writeUTF("UPLOAD");
+            dos.writeUTF(file.getName());
             // Send file size
-            out.writeLong(fileSize);
+            dos.writeLong(fileSize);
     
             // Send file content
             int bytesRead;
             while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
+                dos.write(buffer, 0, bytesRead);
             }
         } finally {
             fileInputStream.close();
         }
     }
 
-    public static void deleteFile(String filename) throws Exception {  
-        out.writeUTF("DELETE");
-        out.writeUTF(filename);
+    private static void getFile(String filename) throws Exception{
+        dos.writeUTF("GET");
+        dos.writeUTF(filename);
 
+        FileOutputStream fos = new FileOutputStream(saveDirectory + filename);
+        long fileSize = dis.readLong();
+        byte[] buffer = new byte[4096];
+
+        int bytesRead;
+        while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int)Math.min(buffer.length, fileSize))) != -1) {
+            fos.write(buffer, 0, bytesRead);
+            fileSize -= bytesRead;
+        }
+        fos.close();
+    }
+
+    public static void deleteFile(String filename) throws Exception {  
+        dos.writeUTF("DELETE");
+        dos.writeUTF(filename);
     }
     
     
@@ -58,7 +75,7 @@ public class Client {
     public static void stopConnection() {
 
         try{
-            out.close();
+            dos.close();
             clientSocket.close();
         } catch (Exception e){
             e.printStackTrace();
@@ -71,19 +88,19 @@ public class Client {
         Client client = new Client();
         client.startConnection(serverAddress, 2025);
         try {
-            deleteFile("test.txt");
+            getFile("test.txt");
             
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        stopConnection();
+        //stopConnection();
         // System.out.println(response);
         client.startConnection(serverAddress, 2025);
         
         try {
             
-            sendFile("large.jpg");
+            getFile("large.jpg");
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

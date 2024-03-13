@@ -43,10 +43,11 @@ public class ServerOne{
                     break;
                     case "DELETE":
                         deleteFile(saveDirectory + dis.readUTF());
+                        System.out.println("File successfully deleted !");
                     break;
                     case "GET":
-                        
-
+                        sendFile(saveDirectory + dis.readUTF());
+                        System.out.println("File successfully sent !");
                     break;
                     default:
                     System.out.println("Wrong request!\n");
@@ -67,6 +68,24 @@ public class ServerOne{
         if(fileToDelete.exists()){
             fileToDelete.delete();
             System.out.println("File deleted");
+        }
+    }
+
+    public static void sendFile(String filepath) throws Exception {
+        File file = new File(filepath);
+        FileInputStream fileInputStream = new FileInputStream(file);
+        byte[] buffer = new byte[4 * 1024];
+        long fileSize = file.length();
+    
+        try {
+            dos.writeLong(fileSize);
+            // Send file content
+            int bytesRead;
+            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                dos.write(buffer, 0, bytesRead);
+            }
+        } finally {
+            fileInputStream.close();
         }
     }
 
