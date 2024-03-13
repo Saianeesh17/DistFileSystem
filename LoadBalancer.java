@@ -136,15 +136,15 @@ public class LoadBalancer {
                     serverSocketConnection.close();
 
                 } catch (SocketException s) {
-                    isRunning[i] = false;
-                    for (int j = 0; j < isRunning.length; j++){
-                        if (isRunning[j]){
-                            leader = j;
-                            break;
-                        }
-                    }
-                    System.out.println(isRunning[i]);
-                    System.out.println(leader);
+                    // isRunning[i] = false;
+                    // for (int j = 0; j < isRunning.length; j++){
+                    //     if (isRunning[j]){
+                    //         leader = j;
+                    //         break;
+                    //     }
+                    // }
+                    // System.out.println(isRunning[i]);
+                    // System.out.println("leader: " + leader);
                     continue;
                 }
             }
@@ -164,59 +164,68 @@ public class LoadBalancer {
 
             
             
-            // HashMap<Integer, String[][]> differences = new HashMap<>();
+            HashMap<Integer, String[][]> differences = new HashMap<>();
+
             // if (!fileContents[(leader + 1) % 3].equals(fileContents[leader])) {
             //     differences.put((leader + 1) % 3, compareArrays(fileContents[leader], fileContents[(leader + 1) % 3]));
             // }
             // if (!fileContents[(leader + 2) % 3].equals(fileContents[leader])) {
             //     differences.put((leader + 2) % 3, compareArrays(fileContents[leader], fileContents[(leader + 2) % 3]));
             // }
+            int active_servers = active_ports.size();
+            for ( int i = 0; i < active_servers - 1; i++){
+                // differences.put((leader + i) % active_servers, compareArrays(fileContents.get(leader) , fileContents.get(leader + i % active_servers)));
+                differences.put((leader + i) % active_servers, compareArrays(fileContents.get(leader) , fileContents.get(leader + i % active_servers)));
+            }
 
-            // for (int i : differences.keySet()){
-            //     String[][] difArray = differences.get(i);
-            //     // Check if any file needs to be uploaded to replicas
-            //     if (difArray[0].length != 0) {
-            //         
-            //         for (int j = 0; j < difArray[0].length; j++){
-            //             String filename = difArray[0][j];
-            //             Socket toLeader = new Socket(SERVER_HOSTS[leader], SERVER_PORTS[leader]);
-            //             DataInputStream dis = new DataInputStream(toLeader.getInputStream());
-            //             DataOutputStream dos = new DataOutputStream(toLeader.getOutputStream());
 
-            //             dos.writeUTF("GET");
-            //             dos.writeUTF(filename);
+            for (int i : differences.keySet()){
+                String[][] difArray = differences.get(i);
+                // Check if any file needs to be uploaded to replicas
+                if (difArray[0].length != 0) {
+                    
+                    for (int j = 0; j < difArray[0].length; j++){
+                        String filename = difArray[0][j];
+                        // Socket toLeader = new Socket(SERVER_HOSTS[leader], SERVER_PORTS[leader]);
+                        Socket toLeader = new Socket("localhost", active_ports.get(leader));
+                        DataInputStream dis = new DataInputStream(toLeader.getInputStream());
+                        DataOutputStream dos = new DataOutputStream(toLeader.getOutputStream());
 
-            //             long filesize = dis.readLong();
-            //             byte[] fileContent = new byte[(int) filesize];
-            //             dis.readFully(fileContent);
+                        dos.writeUTF("GET");
+                        dos.writeUTF(filename);
 
-            //             toLeader.close();
+                        long filesize = dis.readLong();
+                        byte[] fileContent = new byte[(int) filesize];
+                        dis.readFully(fileContent);
 
-            //             Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-            //             // DataInputStream replicaInput = new DataInputStream(toReplica.getInputStream());
-            //             DataOutputStream replicaOutput = new DataOutputStream(toReplica.getOutputStream());
+                        toLeader.close();
 
-            //             replicaOutput.writeUTF("UPLOAD");
-            //             replicaOutput.writeUTF(filename);
-            //             replicaOutput.writeLong(filesize);
-            //             replicaOutput.write(fileContent);
+                        // Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                        Socket toReplica = new Socket("localhost", active_ports.get(i));
+                        // DataInputStream replicaInput = new DataInputStream(toReplica.getInputStream());
+                        DataOutputStream replicaOutput = new DataOutputStream(toReplica.getOutputStream());
 
-            //             toReplica.close();
-            //         }
-            //     }
-            //     //Check if any file needs do be deleted from the replicas
-            //     // if(difArray[1].length != 0) {
-            //     //     for (int j = 0; j < difArray[1].length; j++){
-            //     //         String filename = difArray[1][j];
-            //     //         Socket deleteSocket = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-            //     //         DataOutputStream delOutStream = new DataOutputStream(deleteSocket.getOutputStream());
-            //     //         delOutStream.writeUTF("DELETE");
-            //     //         delOutStream.writeUTF(filename);
+                        replicaOutput.writeUTF("UPLOAD");
+                        replicaOutput.writeUTF(filename);
+                        replicaOutput.writeLong(filesize);
+                        replicaOutput.write(fileContent);
 
-            //     //         deleteSocket.close();
-            //     //     }
-            //     // }
-            // }
+                        toReplica.close();
+                    }
+                }
+                //Check if any file needs do be deleted from the replicas
+                // if(difArray[1].length != 0) {
+                //     for (int j = 0; j < difArray[1].length; j++){
+                //         String filename = difArray[1][j];
+                //         Socket deleteSocket = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                //         DataOutputStream delOutStream = new DataOutputStream(deleteSocket.getOutputStream());
+                //         delOutStream.writeUTF("DELETE");
+                //         delOutStream.writeUTF(filename);
+
+                //         deleteSocket.close();
+                //     }
+                // }
+            }
                 
             
         }
