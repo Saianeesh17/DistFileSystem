@@ -36,6 +36,7 @@ public class LoadBalancer {
         
                     // Accept filename, filesize, and file from the client
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream());
+                    String request = dis.readUTF();
                     String filename = dis.readUTF();
                     long filesize = dis.readLong();
     
@@ -49,6 +50,7 @@ public class LoadBalancer {
     
                         // Transfer the filename, filesize, and file to the server
                         DataOutputStream dos = new DataOutputStream(serverSocketConnection.getOutputStream());
+                        dos.writeUTF(request);
                         dos.writeUTF(filename);
                         dos.writeLong(filesize);
                         dos.write(fileContent); // Write the file content to the server

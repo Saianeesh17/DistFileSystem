@@ -32,6 +32,7 @@ public class Client {
         long fileSize = file.length();
     
         try {
+            out.writeUTF("UPLOAD");
             out.writeUTF(file.getName());
             // Send file size
             out.writeLong(fileSize);
