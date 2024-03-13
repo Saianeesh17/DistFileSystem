@@ -11,6 +11,7 @@ public class LoadBalancer {
     public static final int PORT = 2027;
     public static final int[] SERVER_PORTS = {2025, 2026, 2028};
     public static final String[] SERVER_HOSTS = {"localhost", "localhost", "localhost"};
+    public static boolean[] isRunning = {true, true, true};
 
     public static void main(String[] args) {
         // Start the server logic in a new thread
@@ -99,31 +100,45 @@ public class LoadBalancer {
         public static void checkServerStatus() throws IOException {
             for (int i = 0; i < SERVER_PORTS.length; i++) {
                 // Connect to each server
-                Socket serverSocketConnection = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-                System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+                try {
+                    Socket serverSocketConnection = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                    serverSocketConnection.setSoTimeout(2000);
+                    System.out.println("Connected to server on port " + SERVER_PORTS[i]);
 
-                // Transfer the filename, filesize, and file to the server
-                DataOutputStream out = new DataOutputStream(serverSocketConnection.getOutputStream());
-                DataInputStream in = new DataInputStream(serverSocketConnection.getInputStream());
-                 // Write the file content to the server
-                out.writeUTF("STATUS");
-    
-                // Receive and print the string array
-                int arrayLength = in.readInt();
-                String[] documentNames = new String[arrayLength];
-                for (int j = 0; j < arrayLength; j++) {
-                    documentNames[j] = in.readUTF();
+                    // Transfer the filename, filesize, and file to the server
+                    DataOutputStream out = new DataOutputStream(serverSocketConnection.getOutputStream());
+                    DataInputStream in = new DataInputStream(serverSocketConnection.getInputStream());
+                    // Write the file content to the server
+                    out.writeUTF("STATUS");
+        
+                    // Receive and print the string array
+                    int arrayLength = in.readInt();
+                    String[] documentNames = new String[arrayLength];
+                    for (int j = 0; j < arrayLength; j++) {
+                        documentNames[j] = in.readUTF();
+                    }
+
+                    fileContents[i] = Arrays.copyOf(documentNames, documentNames.length);
+                        
+                    // Print the received array
+                    System.out.println("Documents on server:");
+                    for (String documentName : documentNames) {
+                        System.out.println(documentName);
+                    } 
+
+                    serverSocketConnection.close();
+                } catch (SocketException s) {
+                    isRunning[i] = false;
+                    for (int j = 0; j < isRunning.length; j++){
+                        if (isRunning[j]){
+                            leader = j;
+                            break;
+                        }
+                    }
+                    System.out.println(isRunning[i]);
+                    System.out.println(leader);
+                    continue;
                 }
-
-                fileContents[i] = Arrays.copyOf(documentNames, documentNames.length);
-                     
-                // Print the received array
-                System.out.println("Documents on server:");
-                for (String documentName : documentNames) {
-                    System.out.println(documentName);
-                } 
-
-                serverSocketConnection.close();
             }
 
             HashMap<Integer, String[][]> differences = new HashMap<>();
