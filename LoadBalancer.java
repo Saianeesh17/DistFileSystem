@@ -168,7 +168,15 @@ public class LoadBalancer {
                 }
                 //Check if any file needs do be deleted from the replicas
                 if(difArray[1].length != 0) {
+                    for (int j = 0; j < difArray[1].length; j++){
+                        String filename = difArray[1][j];
+                        Socket deleteSocket = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                        DataOutputStream delOutStream = new DataOutputStream(deleteSocket.getOutputStream());
+                        delOutStream.writeUTF("DELETE");
+                        delOutStream.writeUTF(filename);
 
+                        deleteSocket.close();
+                    }
                 }
             }
                 
