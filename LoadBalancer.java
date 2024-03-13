@@ -87,7 +87,9 @@ public class LoadBalancer {
 
         public static int leader = 0;
 
-        static String[][] fileContents = new String[3][];
+        // static String[][] fileContents = new String[3][];
+
+        static ArrayList<String[]> fileContents = new ArrayList<>();
 
         @Override
         public void run() {
@@ -122,7 +124,7 @@ public class LoadBalancer {
                         documentNames[j] = in.readUTF();
                     }
 
-                    fileContents[i] = Arrays.copyOf(documentNames, documentNames.length);
+                    fileContents.set(i, Arrays.copyOf(documentNames, documentNames.length));
                         
                     // Print the received array
                     System.out.println("Documents on server:");
@@ -139,11 +141,11 @@ public class LoadBalancer {
             }
 
             HashMap<Integer, String[][]> differences = new HashMap<>();
-            if (!fileContents[(leader + 1) % SERVER_PORTS.size()].equals(fileContents[leader])) {
-                differences.put((leader + 1) % SERVER_PORTS.size(), compareArrays(fileContents[leader], fileContents[(leader + 1) % SERVER_PORTS.size()]));
+            if (isRunning[(leader + 1) % SERVER_PORTS.size()] && !fileContents.get((leader + 1) % SERVER_PORTS.size()).equals(fileContents.get(leader))) {
+                differences.put((leader + 1) % SERVER_PORTS.size(), compareArrays(fileContents.get(leader), fileContents.get((leader + 1) % SERVER_PORTS.size())));
             }
-            if (!fileContents[(leader + 2) % SERVER_PORTS.size()].equals(fileContents[leader])) {
-                differences.put((leader + 2) % SERVER_PORTS.size(), compareArrays(fileContents[leader], fileContents[(leader + 2) % SERVER_PORTS.size()]));
+            if (isRunning[(leader + 2) % SERVER_PORTS.size()] && !fileContents.get((leader + 2) % SERVER_PORTS.size()).equals(fileContents.get(leader))) {
+                differences.put((leader + 2) % SERVER_PORTS.size(), compareArrays(fileContents.get(leader), fileContents.get((leader + 2) % SERVER_PORTS.size())));
             }
 
             for (int i : differences.keySet()){
