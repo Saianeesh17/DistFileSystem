@@ -65,6 +65,7 @@ public class Client {
         client.startConnection(serverAddress, 2027);
         try {
             sendFile("large.jpg");
+            
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -72,7 +73,9 @@ public class Client {
         stopConnection();
         // System.out.println(response);
         client.startConnection(serverAddress, 2027);
+        
         try {
+            
             sendFile("test.txt");
         } catch (Exception e) {
             // TODO Auto-generated catch block
