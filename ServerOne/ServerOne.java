@@ -41,6 +41,12 @@ public class ServerOne{
                         System.out.println("Checking server's status");
                         statusCheck(server);
                     break;
+                    case "DELETE":
+                        deleteFile(saveDirectory + dis.readUTF());
+                    break;
+                    case "GET":
+
+                    break;
                     default:
                     System.out.println("Wrong request!\n");
 
@@ -52,6 +58,13 @@ public class ServerOne{
         }
         catch(Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void deleteFile(String filePath) throws Exception{
+        File fileToDelete = new File(filePath);
+        if(fileToDelete.exists()){
+            fileToDelete.delete();
         }
     }
 
