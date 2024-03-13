@@ -124,17 +124,30 @@ public class LoadBalancer {
                 }
 
 
-                if(!compareArrays(fileContents[0], fileContents[1], fileContents[2])){
-                    // detect the missing file(s)
-                    for (int i = 0; i < fileContents[0].length; i++){
-                        if (!fileContents[(leader + 1) % 3][i].equals(fileContents[leader][i])) {
-                            
-                        }
-                        if (!fileContents[(leader + 2) % 3][i].equals(fileContents[leader][i])) {
-                            
-                        }
-                    }
-                };
+                // if(!compareArrays(fileContents[0], fileContents[1], fileContents[2])){
+                //     // detect the missing file(s)
+                //     for (int i = 0; i < fileContents[0].length; i++){
+                //         if (!fileContents[(leader + 1) % 3][i].equals(fileContents[leader][i])) {
+                //             
+                //         }
+                //         if (!fileContents[(leader + 2) % 3][i].equals(fileContents[leader][i])) {
+                //             
+                //         }
+                //     }
+                // };
+                
+                // Start Here
+                // static String[][] fileContents = new String[3][];
+                
+                // String[] arr1 = {
+                //     "value1",
+                //     "value2",
+                // };
+                // String[] arr2 = {"value1"};
+                // String[] arr3 = {"value1", "value2", "value3"};
+                // String[] arr4 = {"value1", "value3", "value4"};
+                String[][] server_2_update = compareArrays(fileContents[0], fileContents[1]);
+                String[][] server_3_update = compareArrays(fileContents[0], fileContents[2]);
             
         }
 
@@ -154,6 +167,41 @@ public class LoadBalancer {
             // If all corresponding elements are equal, return true
             return true;
         }
+
+    public static String[][] compareArrays(String[] base, String[] compare) {
+        Set<String> baseSet = new HashSet<>();
+        Set<String> compareSet = new HashSet<>();
+        List<String> plusValues = new ArrayList<>();
+        List<String> minusValues = new ArrayList<>();
+
+        // Convert arrays to sets for easier comparison
+        for (String val : base) {
+            baseSet.add(val);
+        }
+        for (String val : compare) {
+            compareSet.add(val);
+        }
+
+        // Check for elements in compareSet but not in baseSet (-)
+        for (String val : compareSet) {
+            if (!baseSet.contains(val)) {
+                minusValues.add(val);
+            }
+        }
+
+        // Check for elements in baseSet but not in compareSet (+)
+        for (String val : baseSet) {
+            if (!compareSet.contains(val)) {
+                plusValues.add(val);
+            }
+        }
+
+        String[][] result = new String[2][];
+        result[0] = plusValues.toArray(new String[0]); // "+" values
+        result[1] = minusValues.toArray(new String[0]); // "-" values
+
+        return result;
+    }
 
     }
 }
