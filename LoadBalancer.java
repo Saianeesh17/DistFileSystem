@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -169,10 +171,10 @@ public class LoadBalancer {
         }
 
     public static String[][] compareArrays(String[] base, String[] compare) {
-        Set<String> baseSet = new HashSet<>();
-        Set<String> compareSet = new HashSet<>();
-        List<String> plusValues = new ArrayList<>();
-        List<String> minusValues = new ArrayList<>();
+        HashSet<String> baseSet = new HashSet<>();
+        HashSet<String> compareSet = new HashSet<>();
+        ArrayList<String> plusValues = new ArrayList<>();
+        ArrayList<String> minusValues = new ArrayList<>();
 
         // Convert arrays to sets for easier comparison
         for (String val : base) {
