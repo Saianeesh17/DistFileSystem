@@ -9,12 +9,16 @@ import java.util.TimerTask;
 
 public class LoadBalancer {
     public static final int PORT = 2027;
-    public static final int[] SERVER_PORTS = {2025, 2026, 2028};
+    public static ArrayList<Integer> SERVER_PORTS = new ArrayList<>();
     public static final String[] SERVER_HOSTS = {"localhost", "localhost", "localhost"};
     public static boolean[] isRunning = {true, true, true};
+    public static final String testHost = "localhost";
 
     public static void main(String[] args) {
         // Start the server logic in a new thread
+        SERVER_PORTS.add(2025);
+        SERVER_PORTS.add(2026);
+        SERVER_PORTS.add(2028);
         new Thread(new ServerLogic()).start();
         Timer timer = new Timer();
         ReqStatus req = new ReqStatus();
@@ -58,9 +62,9 @@ public class LoadBalancer {
                 byte[] fileContent = new byte[(int) filesize];
                 dis.readFully(fileContent);
 
-                for (int i = 0; i < SERVER_PORTS.length; i++) {
-                    Socket serverSocketConnection = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-                    System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+                for (int i = 0; i < SERVER_PORTS.size(); i++) {
+                    Socket serverSocketConnection = new Socket(testHost, SERVER_PORTS.get(i));
+                    System.out.println("Connected to server on port " + SERVER_PORTS.get(i));
 
                     DataOutputStream dos = new DataOutputStream(serverSocketConnection.getOutputStream());
                     dos.writeUTF(request);
@@ -98,12 +102,12 @@ public class LoadBalancer {
         }
 
         public static void checkServerStatus() throws IOException {
-            for (int i = 0; i < SERVER_PORTS.length; i++) {
+            for (int i = 0; i < isRunning.length; i++) {
                 // Connect to each server
                 try {
-                    Socket serverSocketConnection = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                    Socket serverSocketConnection = new Socket(testHost, SERVER_PORTS.get(i));
                     serverSocketConnection.setSoTimeout(2000);
-                    System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+                    System.out.println("Connected to server on port " + SERVER_PORTS.get(i));
 
                     // Transfer the filename, filesize, and file to the server
                     DataOutputStream out = new DataOutputStream(serverSocketConnection.getOutputStream());
@@ -125,28 +129,36 @@ public class LoadBalancer {
                     for (String documentName : documentNames) {
                         System.out.println(documentName);
                     } 
-
+                    isRunning[i] = true;
                     serverSocketConnection.close();
                 } catch (SocketException s) {
                     isRunning[i] = false;
-                    for (int j = 0; j < isRunning.length; j++){
-                        if (isRunning[j]){
-                            leader = j;
-                            break;
-                        }
-                    }
-                    System.out.println(isRunning[i]);
-                    System.out.println(leader);
                     continue;
                 }
             }
+            int trueCount = 0;
+            for(boolean i:isRunning){
+                if(i){
+                    trueCount++;
+                }
+            }
+
+                String[][] tempArray = new String[trueCount][];
+                for(int i = 0; i < fileContents.length; i++){
+                    if(isRunning[i]){
+                        tempArray[i % trueCount] = Arrays.copyOf(fileContents[i], fileContents.length);
+                    }
+                }
+
+            System.out.println(trueCount);
+
 
             HashMap<Integer, String[][]> differences = new HashMap<>();
-            if (!fileContents[(leader + 1) % 3].equals(fileContents[leader])) {
-                differences.put((leader + 1) % 3, compareArrays(fileContents[leader], fileContents[(leader + 1) % 3]));
+            if (!tempArray[(leader + 1) % trueCount].equals(tempArray[leader])) {
+                differences.put((leader + 1) % trueCount, compareArrays(tempArray[leader], tempArray[(leader + 1) % trueCount]));
             }
-            if (!fileContents[(leader + 2) % 3].equals(fileContents[leader])) {
-                differences.put((leader + 2) % 3, compareArrays(fileContents[leader], fileContents[(leader + 2) % 3]));
+            if (!tempArray[(leader + 2) % trueCount].equals(tempArray[leader])) {
+                differences.put((leader + 2) % trueCount, compareArrays(tempArray[leader], tempArray[(leader + 2) % trueCount]));
             }
 
             for (int i : differences.keySet()){
@@ -156,7 +168,7 @@ public class LoadBalancer {
                     
                     for (int j = 0; j < difArray[0].length; j++){
                         String filename = difArray[0][j];
-                        Socket toLeader = new Socket(SERVER_HOSTS[leader], SERVER_PORTS[leader]);
+                        Socket toLeader = new Socket(SERVER_HOSTS[leader], SERVER_PORTS.get(leader));
                         DataInputStream dis = new DataInputStream(toLeader.getInputStream());
                         DataOutputStream dos = new DataOutputStream(toLeader.getOutputStream());
 
@@ -169,7 +181,7 @@ public class LoadBalancer {
 
                         toLeader.close();
 
-                        Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                        Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS.get(i));
                         // DataInputStream replicaInput = new DataInputStream(toReplica.getInputStream());
                         DataOutputStream replicaOutput = new DataOutputStream(toReplica.getOutputStream());
 
@@ -185,7 +197,7 @@ public class LoadBalancer {
                 if(difArray[1].length != 0) {
                     for (int j = 0; j < difArray[1].length; j++){
                         String filename = difArray[1][j];
-                        Socket deleteSocket = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                        Socket deleteSocket = new Socket(SERVER_HOSTS[i], SERVER_PORTS.get(i));
                         DataOutputStream delOutStream = new DataOutputStream(deleteSocket.getOutputStream());
                         delOutStream.writeUTF("DELETE");
                         delOutStream.writeUTF(filename);
