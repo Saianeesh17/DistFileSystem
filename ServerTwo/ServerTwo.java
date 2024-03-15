@@ -50,7 +50,8 @@ public class ServerTwo{
                         System.out.println("File successfully sent !");
                     break;
                     default:
-                    System.out.println("Wrong request!\n");
+                        System.out.println("Wrong request!\n");
+                    break;
 
                 }
                 
