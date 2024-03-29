@@ -53,28 +53,37 @@ public class LoadBalancer {
         DataInputStream dis =
             new DataInputStream(clientSocket.getInputStream());
         String request = dis.readUTF();
-        String filename = dis.readUTF();
-        long filesize = dis.readLong();
-
-        byte[] fileContent = new byte[(int)filesize];
-        dis.readFully(fileContent);
-
-        for (int i = 0; i < SERVER_PORTS.length; i++) {
-          Socket serverSocketConnection =
-              new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-          System.out.println("Connected to server on port " + SERVER_PORTS[i]);
-
-          DataOutputStream dos =
-              new DataOutputStream(serverSocketConnection.getOutputStream());
-          dos.writeUTF(request);
-          dos.writeUTF(filename);
-          dos.writeLong(filesize);
-          dos.write(fileContent);
-
-          serverSocketConnection.close();
+        // System.out.println(request);
+        switch (request) {
+          case "UPLOAD":
+            String filename = dis.readUTF();
+            long filesize = dis.readLong();
+    
+            byte[] fileContent = new byte[(int)filesize];
+            dis.readFully(fileContent);
+    
+            for (int i = 0; i < SERVER_PORTS.length; i++) {
+              Socket serverSocketConnection =
+                  new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+              System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+    
+              DataOutputStream dos =
+                  new DataOutputStream(serverSocketConnection.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(filename);
+              dos.writeLong(filesize);
+              dos.write(fileContent);
+    
+              serverSocketConnection.close();
+            }
+    
+            clientSocket.close();
+            break;
+        
+          default:
+            break;
         }
-
-        clientSocket.close();
+        
         System.out.println("File transferred to all servers");
       } catch (IOException e) {
         e.printStackTrace();
