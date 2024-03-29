@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Client {
 
@@ -89,9 +87,6 @@ public class Client {
         String[] serverAddresses = new String[] { "127.0.0.1", "127.0.0.1" };
         Client client = new Client();
         Scanner scanner = new Scanner(System.in);
-        Timer timer = new Timer();
-        ReqLBStatus rlb = new ReqLBStatus();
-        timer.schedule(rlb, 0, 2000);
         System.out.println(
                 "Enter your new command from the list: \nWrite UPLOAD <File name> to upload a file to the server\n" +
                         "Write GET <File name> to get receive a file from the server \nWrite DELETE <File name> to delete a file from the server \nWrite QUIT to exit");
@@ -174,11 +169,5 @@ public class Client {
         }
         scanner.close();
 
-    }
-
-    public static class ReqLBStatus extends TimerTask{
-        public void run() {
-            System.out.println("Hello world");
-        }
     }
 }
