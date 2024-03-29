@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.ConnectException;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -87,6 +88,7 @@ public class Client {
     public static void main(String[] args) {
 
         String[] serverAddresses = new String[] { "127.0.0.1", "127.0.0.1" };
+        int[] portVals = new int[] { 2027, 2029 };
         Client client = new Client();
         Scanner scanner = new Scanner(System.in);
         Timer timer = new Timer();
@@ -96,14 +98,23 @@ public class Client {
                 "Enter your new command from the list: \nWrite UPLOAD <File name> to upload a file to the server\n" +
                         "Write GET <File name> to get receive a file from the server \nWrite DELETE <File name> to delete a file from the server \nWrite QUIT to exit");
         String command = scanner.nextLine();
+        
         while (!command.equals("QUIT")) {
-
+            int addressVal = 0;
             String[] parameters = command.split(" ");
             switch(parameters[0]){
                 case "UPLOAD":
-                    client.startConnection(serverAddresses[0], 2025);
+                    try{
+                        clientSocket = new Socket(serverAddresses[addressVal], portVals[addressVal]);
+                    }catch(ConnectException e){
+                        System.out.println(serverAddresses[addressVal] + " " + portVals[addressVal]);
+                        addressVal = 1;
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    
+                    client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
-                        System.out.println(parameters[1]);
                         sendFile(parameters[1]);
                         System.out.println("File successfully sent!");
                     }catch(ArrayIndexOutOfBoundsException e){
