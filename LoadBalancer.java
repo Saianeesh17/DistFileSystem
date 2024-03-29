@@ -63,6 +63,7 @@ public class LoadBalancer {
             dis.readFully(fileContent);
     
             for (int i = 0; i < SERVER_PORTS.length; i++) {
+              //Need to change. If serverone is down it will not send
               Socket serverSocketConnection =
                   new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
               System.out.println("Connected to server on port " + SERVER_PORTS[i]);
@@ -83,6 +84,7 @@ public class LoadBalancer {
           case "DELETE":
             String deletename = dis.readUTF();
             for (int i = 0; i < SERVER_PORTS.length; i++) {
+              //Need to change. If serverone is down it will not delete
               Socket serverSocketConnection =
                   new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
               System.out.println("Connected to server on port " + SERVER_PORTS[i]);
@@ -100,7 +102,7 @@ public class LoadBalancer {
           
           case "GET":
             String getFileName = dis.readUTF();
-  
+            //Need to change
             Socket serverSocketGet = new Socket("localhost", 2025);
             System.out.println("Connected to server on port 2025");
             DataOutputStream dos = new DataOutputStream(serverSocketGet.getOutputStream());
