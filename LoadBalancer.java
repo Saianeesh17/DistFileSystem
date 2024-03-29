@@ -79,7 +79,25 @@ public class LoadBalancer {
     
             clientSocket.close();
             break;
-        
+          
+          case "DELETE":
+            String deletename = dis.readUTF();
+            for (int i = 0; i < SERVER_PORTS.length; i++) {
+              Socket serverSocketConnection =
+                  new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+              System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+    
+              DataOutputStream dos =
+                  new DataOutputStream(serverSocketConnection.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(deletename);
+    
+              serverSocketConnection.close();
+            }
+    
+            clientSocket.close();
+            break;  
+          
           default:
             break;
         }
