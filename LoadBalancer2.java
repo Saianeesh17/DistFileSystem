@@ -53,28 +53,84 @@ public class LoadBalancer2 {
         DataInputStream dis =
             new DataInputStream(clientSocket.getInputStream());
         String request = dis.readUTF();
-        String filename = dis.readUTF();
-        long filesize = dis.readLong();
+        // System.out.println(request);
+        switch (request) {
+          case "UPLOAD":
+            String filename = dis.readUTF();
+            long filesize = dis.readLong();
+    
+            byte[] fileContent = new byte[(int)filesize];
+            dis.readFully(fileContent);
+    
+            for (int i = 0; i < SERVER_PORTS.length; i++) {
+              Socket serverSocketConnection =
+                  new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+              System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+    
+              DataOutputStream dos =
+                  new DataOutputStream(serverSocketConnection.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(filename);
+              dos.writeLong(filesize);
+              dos.write(fileContent);
+    
+              serverSocketConnection.close();
+            }
+    
+            clientSocket.close();
+            break;
+          
+          case "DELETE":
+            String deletename = dis.readUTF();
+            for (int i = 0; i < SERVER_PORTS.length; i++) {
+              Socket serverSocketConnection =
+                  new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+              System.out.println("Connected to server on port " + SERVER_PORTS[i]);
+    
+              DataOutputStream dos =
+                  new DataOutputStream(serverSocketConnection.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(deletename);
+    
+              serverSocketConnection.close();
+            }
+    
+            clientSocket.close();
+            break;  
+          
+          case "GET":
+            String getFileName = dis.readUTF();
+  
+            Socket serverSocketGet = new Socket("localhost", 2025);
+            System.out.println("Connected to server on port 2025");
+            DataOutputStream dos = new DataOutputStream(serverSocketGet.getOutputStream());
+            dos.writeUTF(request);
+            dos.writeUTF(getFileName);
+            
+            DataInputStream inputStreamServer = new DataInputStream(serverSocketGet.getInputStream());
+            long fileSizeGet = inputStreamServer.readLong();
+  
+            
+            byte[] fileContentGet = new byte[(int)fileSizeGet];
+  
+            inputStreamServer.readFully(fileContentGet);
+  
+            DataOutputStream clientSocketOutput = new DataOutputStream(clientSocket.getOutputStream());
+            clientSocketOutput.writeLong(fileSizeGet);
+            clientSocketOutput.write(fileContentGet);
+             
+            serverSocketGet.close();
+            clientSocket.close();
+            clientSocketOutput.close();
+            inputStreamServer.close();
+            dos.close();
+            dis.close();  
+            break;
 
-        byte[] fileContent = new byte[(int)filesize];
-        dis.readFully(fileContent);
-
-        for (int i = 0; i < SERVER_PORTS.length; i++) {
-          Socket serverSocketConnection =
-              new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-          System.out.println("Connected to server on port " + SERVER_PORTS[i]);
-
-          DataOutputStream dos =
-              new DataOutputStream(serverSocketConnection.getOutputStream());
-          dos.writeUTF(request);
-          dos.writeUTF(filename);
-          dos.writeLong(filesize);
-          dos.write(fileContent);
-
-          serverSocketConnection.close();
+          default:
+            break;
         }
-
-        clientSocket.close();
+        
         System.out.println("File transferred to all servers");
       } catch (IOException e) {
         e.printStackTrace();
