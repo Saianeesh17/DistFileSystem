@@ -9,15 +9,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.ConnectException;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Client {
 
     private static Socket clientSocket;
     private static DataOutputStream dos;
     private static DataInputStream dis;
-    private String resp;
     static String saveDirectory = "./client_received_files/";
 
     public void startConnection(String ip, int port) {
@@ -91,9 +88,6 @@ public class Client {
         int[] portVals = new int[] { 2027, 2029 };
         Client client = new Client();
         Scanner scanner = new Scanner(System.in);
-        Timer timer = new Timer();
-        ReqLBStatus rlb = new ReqLBStatus();
-        timer.schedule(rlb, 0, 2000);
         System.out.println(
                 "Enter your new command from the list: \nWrite UPLOAD <File name> to upload a file to the server\n" +
                         "Write GET <File name> to get receive a file from the server \nWrite DELETE <File name> to delete a file from the server \nWrite QUIT to exit");
@@ -107,7 +101,7 @@ public class Client {
                     try{
                         clientSocket = new Socket(serverAddresses[addressVal], portVals[addressVal]);
                     }catch(ConnectException e){
-                        System.out.println(serverAddresses[addressVal] + " " + portVals[addressVal]);
+                        System.out.println("Loadbalancer 1 failed");
                         addressVal = 1;
                     }catch(Exception e){
                         e.printStackTrace();
@@ -127,7 +121,15 @@ public class Client {
                     
                 break;
                 case "DELETE":
-                    client.startConnection(serverAddresses[0], 2025);
+                    try{
+                        clientSocket = new Socket(serverAddresses[addressVal], portVals[addressVal]);
+                    }catch(ConnectException e){
+                        System.out.println("Loadbalancer 1 failed");
+                        addressVal = 1;
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
                         deleteFile(parameters[1]);
                         System.out.println("File successfully deleted!");
@@ -141,7 +143,15 @@ public class Client {
                     
                 break;
                 case "GET":
-                    client.startConnection(serverAddresses[0], 2025);
+                    try{
+                        clientSocket = new Socket(serverAddresses[addressVal], portVals[addressVal]);
+                    }catch(ConnectException e){
+                        System.out.println("Loadbalancer 1 failed");
+                        addressVal = 1;
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
                         getFile(parameters[1]);
                         System.out.println("File successfully received!");
@@ -158,26 +168,6 @@ public class Client {
                 break;
 
             }
-            // client.startConnection(serverAddresses[0], 2025);
-            // try {
-            // getFile("test.txt");
-
-            // } catch (Exception e) {
-            // // TODO Auto-generated catch block
-            // e.printStackTrace();
-            // }
-            // //stopConnection();
-            // // System.out.println(response);
-            // client.startConnection(serverAddresses[0], 2025);
-
-            // try {
-
-            // getFile("large.jpg");
-            // } catch (Exception e) {
-            // // TODO Auto-generated catch block
-            // e.printStackTrace();
-            // }
-            // stopConnection();
             System.out.println(
                     "Enter your new command from the list: \nWrite UPLOAD <File name> to upload a file to the server\n"
                             + "Write GET <File name> to get receive a file from the server \nWrite DELETE <File name> to delete a file from the server \nWrite QUIT to exit");
@@ -187,9 +177,4 @@ public class Client {
 
     }
 
-    public static class ReqLBStatus extends TimerTask{
-        public void run() {
-            System.out.println("Hello world");
-        }
-    }
 }
