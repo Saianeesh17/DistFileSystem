@@ -40,7 +40,8 @@ public class LoadBalancer {
     new Thread(new ServerLogic()).start();
     Timer timer = new Timer();
     ReqStatus req = new ReqStatus();
-    timer.schedule(req, 0, 5000);
+    // timer.schedule(req, 0, 5000);
+    timer.schedule(req, 0, 10000);
     // Other operations can be performed here concurrently
   }
 
@@ -106,9 +107,7 @@ public class LoadBalancer {
               serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
               removeServer(ACTIVE_SERVER_PORTS.get(i));
             }
-            // Need to change. If serverone is down it will not send
           }
-
           clientSocket.close();
           break;
 
@@ -116,20 +115,25 @@ public class LoadBalancer {
           String deletename = dis.readUTF();
           // for (int i = 0; i < SERVER_PORTS.length; i++) {
           for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
-            // Need to change. If serverone is down it will not delete
-            Socket serverSocketConnection =
-                // new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-                new Socket(ACTIVE_SERVER_HOSTS.get(i),
-                           ACTIVE_SERVER_PORTS.get(i));
-            System.out.println("Connected to server on port " +
-                               SERVER_PORTS[i]);
+            try {
+              Socket serverSocketConnection =
+                  // new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
+                  new Socket(ACTIVE_SERVER_HOSTS.get(i),
+                             ACTIVE_SERVER_PORTS.get(i));
+              serverSocketConnection.setSoTimeout(2000);
+              System.out.println("Connected to server on port " +
+                                 ACTIVE_SERVER_PORTS.get(i));
 
-            DataOutputStream dos =
-                new DataOutputStream(serverSocketConnection.getOutputStream());
-            dos.writeUTF(request);
-            dos.writeUTF(deletename);
+              DataOutputStream dos = new DataOutputStream(
+                  serverSocketConnection.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(deletename);
 
-            serverSocketConnection.close();
+              serverSocketConnection.close();
+            } catch (SocketException e) {
+              serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
+              removeServer(ACTIVE_SERVER_PORTS.get(i));
+            }
           }
 
           clientSocket.close();
@@ -137,34 +141,46 @@ public class LoadBalancer {
 
         case "GET":
           String getFileName = dis.readUTF();
-          // Need to change
-          Socket serverSocketGet = new Socket("localhost", 2025);
-          System.out.println("Connected to server on port 2025");
-          DataOutputStream dos =
-              new DataOutputStream(serverSocketGet.getOutputStream());
-          dos.writeUTF(request);
-          dos.writeUTF(getFileName);
+          for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
+            try {
 
-          DataInputStream inputStreamServer =
-              new DataInputStream(serverSocketGet.getInputStream());
-          long fileSizeGet = inputStreamServer.readLong();
+              // Socket serverSocketGet = new Socket("localhost", 2025);
+              Socket serverSocketGet = new Socket(ACTIVE_SERVER_HOSTS.get(i),
+                                                  ACTIVE_SERVER_PORTS.get(i));
+              serverSocketGet.setSoTimeout(2000);
+              System.out.println("Connected to server on port " +
+                                 ACTIVE_SERVER_PORTS.get(i));
+              DataOutputStream dos =
+                  new DataOutputStream(serverSocketGet.getOutputStream());
+              dos.writeUTF(request);
+              dos.writeUTF(getFileName);
 
-          byte[] fileContentGet = new byte[(int)fileSizeGet];
+              DataInputStream inputStreamServer =
+                  new DataInputStream(serverSocketGet.getInputStream());
+              long fileSizeGet = inputStreamServer.readLong();
 
-          inputStreamServer.readFully(fileContentGet);
+              byte[] fileContentGet = new byte[(int)fileSizeGet];
 
-          DataOutputStream clientSocketOutput =
-              new DataOutputStream(clientSocket.getOutputStream());
-          clientSocketOutput.writeLong(fileSizeGet);
-          clientSocketOutput.write(fileContentGet);
+              inputStreamServer.readFully(fileContentGet);
 
-          serverSocketGet.close();
-          clientSocket.close();
-          clientSocketOutput.close();
-          inputStreamServer.close();
-          dos.close();
-          dis.close();
-          break;
+              DataOutputStream clientSocketOutput =
+                  new DataOutputStream(clientSocket.getOutputStream());
+              clientSocketOutput.writeLong(fileSizeGet);
+              clientSocketOutput.write(fileContentGet);
+              // Need to change
+              serverSocketGet.close();
+              clientSocket.close();
+              clientSocketOutput.close();
+              inputStreamServer.close();
+              dos.close();
+              dis.close();
+              break;
+            } catch (SocketException e) {
+              serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
+              removeServer(ACTIVE_SERVER_PORTS.get(i));
+              continue;
+            }
+          }
 
         default:
           break;
