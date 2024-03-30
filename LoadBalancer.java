@@ -40,8 +40,7 @@ public class LoadBalancer {
     new Thread(new ServerLogic()).start();
     Timer timer = new Timer();
     ReqStatus req = new ReqStatus();
-    // timer.schedule(req, 0, 5000);
-    timer.schedule(req, 0, 10000);
+    timer.schedule(req, 0, 5000);
     // Other operations can be performed here concurrently
   }
 
@@ -106,8 +105,10 @@ public class LoadBalancer {
             } catch (SocketException e) {
               serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
               removeServer(ACTIVE_SERVER_PORTS.get(i));
+              i--; // Adjust loop index
             }
           }
+          System.out.println("File transferred to all servers");
           clientSocket.close();
           break;
 
@@ -133,6 +134,7 @@ public class LoadBalancer {
             } catch (SocketException e) {
               serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
               removeServer(ACTIVE_SERVER_PORTS.get(i));
+              i--; // Adjust loop index
             }
           }
 
@@ -141,15 +143,16 @@ public class LoadBalancer {
 
         case "GET":
           String getFileName = dis.readUTF();
+          boolean fileSent = false;
+
           for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
             try {
-
-              // Socket serverSocketGet = new Socket("localhost", 2025);
               Socket serverSocketGet = new Socket(ACTIVE_SERVER_HOSTS.get(i),
                                                   ACTIVE_SERVER_PORTS.get(i));
               serverSocketGet.setSoTimeout(2000);
               System.out.println("Connected to server on port " +
                                  ACTIVE_SERVER_PORTS.get(i));
+
               DataOutputStream dos =
                   new DataOutputStream(serverSocketGet.getOutputStream());
               dos.writeUTF(request);
@@ -158,7 +161,6 @@ public class LoadBalancer {
               DataInputStream inputStreamServer =
                   new DataInputStream(serverSocketGet.getInputStream());
               long fileSizeGet = inputStreamServer.readLong();
-
               byte[] fileContentGet = new byte[(int)fileSizeGet];
 
               inputStreamServer.readFully(fileContentGet);
@@ -167,33 +169,52 @@ public class LoadBalancer {
                   new DataOutputStream(clientSocket.getOutputStream());
               clientSocketOutput.writeLong(fileSizeGet);
               clientSocketOutput.write(fileContentGet);
-              // Need to change
+
+              fileSent = true; // Mark as file sent successfully
+
+              // Close resources for this server connection
               serverSocketGet.close();
-              clientSocket.close();
-              clientSocketOutput.close();
-              inputStreamServer.close();
               dos.close();
-              dis.close();
-              break;
+              inputStreamServer.close();
+
+              if (fileSent) {
+                break; // Exit the loop if file sent successfully
+              }
+
             } catch (SocketException e) {
-              serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
-              removeServer(ACTIVE_SERVER_PORTS.get(i));
-              continue;
+              System.out.println("Server on port " +
+                                 ACTIVE_SERVER_PORTS.get(i) +
+                                 " is not available.");
+              serverStatus.put(ACTIVE_SERVER_PORTS.get(i),
+                               false); // Mark server as down
+              removeServer(
+                  ACTIVE_SERVER_PORTS.get(i)); // Remove server from active list
+              i--;                             // Adjust loop index
+                                               // iterating over
             }
           }
+
+          // If loop exits and file hasn't been sent, it means all servers were
+          // tried and failed
+          if (!fileSent) {
+            System.out.println(
+                "Failed to send file. All servers are down or unreachable.");
+            // Optionally, send an error message back to the client indicating
+            // failure
+          }
+
+          // Closing the client socket should happen outside the loop, after all
+          // attempts
+          dis.close();
+          clientSocket.close();
+          break;
 
         default:
           break;
         }
 
-        System.out.println("File transferred to all servers");
       } catch (IOException e) {
-        // } catch (SocketException e) {
-        // e.printStackTrace();
-        // Remove Active server from active servers
-        // serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
-        // ACTIVE_SERVER_PORTS.remove(i);
-        // ACTIVE_SERVER_HOSTS.remove(i);
+        e.printStackTrace();
       }
     }
   }
@@ -219,8 +240,8 @@ public class LoadBalancer {
     public static void checkServerStatus() throws IOException {
       ArrayList<Integer> active_ports = new ArrayList<>();
       ArrayList<String> active_hosts = new ArrayList<>();
-      ArrayList<String[]> fileContents = new ArrayList<>();
-      HashMap<Integer, String[]> fileContentss = new HashMap();
+      // ArrayList<String[]> fileContents = new ArrayList<>();
+      HashMap<Integer, String[]> fileContents = new HashMap();
       for (int i = 0; i < SERVER_PORTS.length; i++) {
         // Connect to each server
         try {
@@ -243,7 +264,6 @@ public class LoadBalancer {
           for (int j = 0; j < arrayLength; j++) {
             documentNames[j] = in.readUTF();
           }
-          System.out.println("## Made it here! ##");
 
           // if the ports previous state was inactive:
           // set the port to active
@@ -257,8 +277,8 @@ public class LoadBalancer {
           // fileContents[i] = Arrays.copyOf(documentNames,
           // documentNames.length);
 
-          fileContents.add(documentNames);
-          fileContentss.put(SERVER_PORTS[i], documentNames);
+          // fileContents.add(documentNames);
+          fileContents.put(SERVER_PORTS[i], documentNames);
 
           // Print the received array
           System.out.print("Documents on server: ");
@@ -309,14 +329,16 @@ public class LoadBalancer {
                            ", port: " + ACTIVE_SERVER_PORTS.get(i));
         // for (int j = 0; j < fileContents.get(i).length; j++) {
         int fileContents_len =
-            fileContentss.get(ACTIVE_SERVER_PORTS.get(i)).length;
+            fileContents.get(ACTIVE_SERVER_PORTS.get(i)).length;
         if (fileContents_len > 0) {
+                    System.out.print("file_contents: ");
           for (int j = 0;
-               j < fileContentss.get(ACTIVE_SERVER_PORTS.get(i)).length; j++) {
+               j < fileContents.get(ACTIVE_SERVER_PORTS.get(i)).length; j++) {
             // System.out.println(fileContents.get(i)[j]);
-            System.out.println(
-                fileContentss.get(ACTIVE_SERVER_PORTS.get(i))[j]);
+            System.out.print(
+                fileContents.get(ACTIVE_SERVER_PORTS.get(i))[j] + " ");
           }
+          System.out.println();
         }
       }
       System.out.println(
@@ -333,8 +355,8 @@ public class LoadBalancer {
         // differences.put(
         //     i, compareArrays(fileContents.get(leader), fileContents.get(i)));
         differences.put(
-            i, compareArrays(fileContentss.get(leader_port),
-                             fileContentss.get(ACTIVE_SERVER_PORTS.get(i))));
+            i, compareArrays(fileContents.get(leader_port),
+                             fileContents.get(ACTIVE_SERVER_PORTS.get(i))));
         // }
       }
       // Iterate over the HashMap
@@ -385,7 +407,7 @@ public class LoadBalancer {
             // Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
             // Socket toReplica = new Socket("localhost", active_ports.get(i));
             Socket toReplica =
-                new Socket("localhost", ACTIVE_SERVER_PORTS.get(i));
+                new Socket(ACTIVE_SERVER_HOSTS.get(i), ACTIVE_SERVER_PORTS.get(i));
             // DataInputStream replicaInput = new
             // DataInputStream(toReplica.getInputStream());
             DataOutputStream replicaOutput =
@@ -408,7 +430,7 @@ public class LoadBalancer {
             // Socket deleteSocket = new Socket("localhost",
             // active_ports.get(i));
             Socket deleteSocket =
-                new Socket("localhost", ACTIVE_SERVER_PORTS.get(i));
+                new Socket(ACTIVE_SERVER_HOSTS.get(i), ACTIVE_SERVER_PORTS.get(i));
 
             DataOutputStream delOutStream =
                 new DataOutputStream(deleteSocket.getOutputStream());
