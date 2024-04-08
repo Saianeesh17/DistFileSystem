@@ -53,7 +53,7 @@ public class Client {
         dos.writeUTF("GET");
         dos.writeUTF(filename);
         try{
-            long fileSize = readWithTimeout(dis, 1000);
+            long fileSize = readWithTimeout(dis, 4000);
             FileOutputStream fos = new FileOutputStream(saveDirectory + filename);
             byte[] buffer = new byte[4096];
         
