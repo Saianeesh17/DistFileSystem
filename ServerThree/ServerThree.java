@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ServerThree{
-
+    // initialization of variables for server
     int port = 2028;
     Socket server;
     ServerSocket serverSocket;
@@ -21,10 +21,13 @@ public class ServerThree{
         
     }
 
+    // starts server based on initialized parameters 
     public void startServer() {
         try {
+            // start connection on specified port
             serverSocket = new ServerSocket(this.port);
             System.out.println("Server listening on port" + port);
+            // continuosly listen for incoming requests
             while(true){
                 server = serverSocket.accept();
                 dis = new DataInputStream(server.getInputStream());
@@ -32,6 +35,7 @@ public class ServerThree{
                 
                 String request = dis.readUTF();
 
+                // switch-case to handle different request kinds
                 switch(request){
                     case "UPLOAD":
                         receiveFile(saveDirectory + dis.readUTF());
@@ -54,9 +58,7 @@ public class ServerThree{
                     break;
 
                 }
-                
-                //dis.close();
-                //dos.close();
+
             }
         }
         catch(Exception e) {
@@ -64,6 +66,7 @@ public class ServerThree{
         }
     }
 
+    // deletes file with specified filename
     private static void deleteFile(String filePath) throws Exception{
         File fileToDelete = new File(filePath);
         if(fileToDelete.exists()){
@@ -72,6 +75,7 @@ public class ServerThree{
         }
     }
 
+    // returns file
     public static void sendFile(String filepath) throws Exception {
         File file = new File(filepath);
         if(file.exists()){
@@ -93,6 +97,7 @@ public class ServerThree{
         
     }
 
+    // returns status of server to requesting load balancer
     private static void statusCheck(Socket clientSocket) throws IOException{
         // Get files name and put them into an array
         String[] filesArray = getFilesArray();
@@ -105,6 +110,7 @@ public class ServerThree{
 
     }
 
+    // returns all files in the database of the server
     private static String[] getFilesArray() {
         File folder = new File(saveDirectory);
         File[] listOfFiles = folder.listFiles();
@@ -120,6 +126,7 @@ public class ServerThree{
         return fileArray;
     }
     
+    // writes file to specified filepath
     private static void receiveFile(String filePath) throws Exception{
         FileOutputStream fos = new FileOutputStream(filePath);
         long fileSize = dis.readLong();
@@ -133,8 +140,8 @@ public class ServerThree{
         fos.close();
     }
 
+    // main method
     public static void main(String[] args){
-        // System.out.println("Hello World");
         ServerThree serverThree =  new ServerThree();
         serverThree.startServer();
     }

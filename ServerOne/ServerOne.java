@@ -106,7 +106,7 @@ public class ServerOne{
         }
 
     }
-    // returns all giles in the database of the server
+    // returns all files in the database of the server
     private static String[] getFilesArray() {
         File folder = new File(saveDirectory);
         File[] listOfFiles = folder.listFiles();
