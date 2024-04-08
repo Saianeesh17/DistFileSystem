@@ -11,8 +11,8 @@ import java.util.TimerTask;
 public class LoadBalancer2 {
   public static final int PORT = 2029;
   public static final int[] SERVER_PORTS = {2025, 2026, 2028};
-  public static final String[] SERVER_HOSTS = {"localhost", "localhost",
-                                               "localhost"};
+  public static final String[] SERVER_HOSTS = {"10.13.92.30", "10.13.92.30",
+                                               "10.13.92.30"}; 
   public static ArrayList<Integer> ACTIVE_SERVER_PORTS = new ArrayList<>();
   public static ArrayList<String> ACTIVE_SERVER_HOSTS = new ArrayList<>();
   public static Map<Integer, Boolean> serverStatus = new HashMap<>();
