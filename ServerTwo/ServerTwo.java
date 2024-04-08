@@ -74,20 +74,23 @@ public class ServerTwo{
 
     public static void sendFile(String filepath) throws Exception {
         File file = new File(filepath);
-        FileInputStream fileInputStream = new FileInputStream(file);
-        byte[] buffer = new byte[4 * 1024];
-        long fileSize = file.length();
-    
-        try {
-            dos.writeLong(fileSize);
-            // Send file content
-            int bytesRead;
-            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                dos.write(buffer, 0, bytesRead);
+        if(file.exists()){
+            FileInputStream fileInputStream = new FileInputStream(file);
+            byte[] buffer = new byte[4 * 1024];
+            long fileSize = file.length();
+        
+            try {
+                dos.writeLong(fileSize);
+                // Send file content
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    dos.write(buffer, 0, bytesRead);
+                }
+            } finally {
+                fileInputStream.close();
             }
-        } finally {
-            fileInputStream.close();
         }
+        
     }
 
     private static void statusCheck(Socket clientSocket) throws IOException{

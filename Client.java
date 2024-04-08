@@ -1,14 +1,13 @@
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.ConnectException;
 import java.util.Scanner;
+import java.util.concurrent.TimeoutException;
+import java.io.IOException;
 
 public class Client {
 
@@ -53,18 +52,38 @@ public class Client {
     private static void getFile(String filename) throws Exception {
         dos.writeUTF("GET");
         dos.writeUTF(filename);
-
-        FileOutputStream fos = new FileOutputStream(saveDirectory + filename);
-        long fileSize = dis.readLong();
-        byte[] buffer = new byte[4096];
-
-        int bytesRead;
-        while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
-            fos.write(buffer, 0, bytesRead);
-            fileSize -= bytesRead;
+        try{
+            long fileSize = readWithTimeout(dis, 1000);
+            FileOutputStream fos = new FileOutputStream(saveDirectory + filename);
+            byte[] buffer = new byte[4096];
+        
+            int bytesRead;
+            while (fileSize > 0 && (bytesRead = dis.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                fos.write(buffer, 0, bytesRead);
+                fileSize -= bytesRead;
+            }
+            fos.close();
+            System.out.println("File successfully received!");
+        }catch(TimeoutException e){
+            System.out.println("File does not exist");
         }
-        fos.close();
+        
     }
+    public static long readWithTimeout(DataInputStream in, long timeoutMillis) throws IOException, TimeoutException {
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < timeoutMillis) {
+            if (in.available() > 0) {
+            return in.readLong();
+            }
+            try {
+            Thread.sleep(10); // Adjust sleep time based on your needs
+            } catch (InterruptedException e) {
+            // Handle interruption (optional)
+            }
+        }
+        // Timeout reached, throw an exception or handle as needed
+        throw new TimeoutException("No data received within timeout");
+        }
 
     public static void deleteFile(String filename) throws Exception {
         dos.writeUTF("DELETE");
@@ -98,6 +117,7 @@ public class Client {
             String[] parameters = command.split(" ");
             switch(parameters[0]){
                 case "UPLOAD":
+                    boolean checkFile = false;
                     try{
                         clientSocket = new Socket(serverAddresses[addressVal], portVals[addressVal]);
                     }catch(ConnectException e){
@@ -109,13 +129,26 @@ public class Client {
                     
                     client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
-                        sendFile(parameters[1]);
+                        File directory = new File(System.getProperty("user.dir"));
+                        File[] files = directory.listFiles();
+                        if (files != null) { 
+                            for (File file : files) { 
+                                if(file.getName().equals(parameters[1])){
+                                    checkFile = true;
+                                }
+                            } 
+                        }
+                        if(checkFile){
+                            sendFile(parameters[1]);
+                        }else{
+                            throw new Exception("");
+                        }
+                        
                         System.out.println("File successfully sent!");
                     }catch(ArrayIndexOutOfBoundsException e){
                         System.out.println("No file entered");
                     }catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        System.out.println("File does not exist");
                     }
                     stopConnection();
                     
@@ -131,6 +164,7 @@ public class Client {
                     }
                     client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
+
                         deleteFile(parameters[1]);
                         System.out.println("File successfully deleted!");
                     }catch(ArrayIndexOutOfBoundsException e){
@@ -154,7 +188,7 @@ public class Client {
                     client.startConnection(serverAddresses[addressVal], portVals[addressVal]);
                     try {
                         getFile(parameters[1]);
-                        System.out.println("File successfully received!");
+                        
                     }catch(ArrayIndexOutOfBoundsException e){
                         System.out.println("No file entered");
                     }catch (Exception e) {
