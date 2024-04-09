@@ -142,7 +142,6 @@ public class ServerTwo{
 
     // main method
     public static void main(String[] args){
-        // System.out.println("Hello World");
         ServerTwo serverTwo =  new ServerTwo();
         serverTwo.startServer();
     }
