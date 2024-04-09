@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class LoadBalancer {
+  // ip and port info of all servers, along with lists of active servers
   public static final int PORT = 2027;
   public static final int[] SERVER_PORTS = {2025, 2026, 2028};
   public static final String[] SERVER_HOSTS = {"10.13.92.30", "10.13.92.30",
@@ -17,6 +18,7 @@ public class LoadBalancer {
   public static ArrayList<String> ACTIVE_SERVER_HOSTS = new ArrayList<>();
   public static Map<Integer, Boolean> serverStatus = new HashMap<>();
 
+  // removing server from active server hosts and ports
   public static void removeServer(int port_number) {
     for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
       if (port_number == ACTIVE_SERVER_PORTS.get(i)) {
@@ -33,17 +35,17 @@ public class LoadBalancer {
     }
   }
 
-  // public static boolean[] isRunning = {true, true, true};
-
   public static void main(String[] args) {
     // Start the server logic in a new thread
     new Thread(new ServerLogic()).start();
+    // Timer thread to check status of server every 5 seconds
     Timer timer = new Timer();
     ReqStatus req = new ReqStatus();
     timer.schedule(req, 0, 5000);
     // Other operations can be performed here concurrently
   }
 
+  // accept incoming requests from clients
   public static class ServerLogic implements Runnable {
     @Override
     public void run() {
@@ -62,6 +64,7 @@ public class LoadBalancer {
     }
   }
 
+  // Thread to process requests from the client
   public static class ProcessReq implements Runnable {
     private Socket clientSocket;
 
@@ -73,26 +76,24 @@ public class LoadBalancer {
         DataInputStream dis =
             new DataInputStream(clientSocket.getInputStream());
         String request = dis.readUTF();
-        // System.out.println(request);
+        // switch-case to handle different request types
         switch (request) {
         case "UPLOAD":
+          // read file content from clients
           String filename = dis.readUTF();
           long filesize = dis.readLong();
 
           byte[] fileContent = new byte[(int)filesize];
           dis.readFully(fileContent);
-
-          // for (int i = 0; i < SERVER_PORTS.length; i++) {
+          // connect and send file content to all active servers
           for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
             try {
 
               Socket serverSocketConnection =
-                  // new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
                   new Socket(ACTIVE_SERVER_HOSTS.get(i),
                              ACTIVE_SERVER_PORTS.get(i));
               serverSocketConnection.setSoTimeout(2000);
               System.out.println("Connected to server on port " +
-                                 // SERVER_PORTS[i]);
                                  ACTIVE_SERVER_PORTS.get(i));
               DataOutputStream dos = new DataOutputStream(
                   serverSocketConnection.getOutputStream());
@@ -102,6 +103,8 @@ public class LoadBalancer {
               dos.write(fileContent);
 
               serverSocketConnection.close();
+            
+            // handle server crashes
             } catch (SocketException e) {
               serverStatus.put(ACTIVE_SERVER_PORTS.get(i), false);
               removeServer(ACTIVE_SERVER_PORTS.get(i));
@@ -112,13 +115,12 @@ public class LoadBalancer {
           clientSocket.close();
           break;
 
+        // delete file from all active servers
         case "DELETE":
           String deletename = dis.readUTF();
-          // for (int i = 0; i < SERVER_PORTS.length; i++) {
           for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
             try {
               Socket serverSocketConnection =
-                  // new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
                   new Socket(ACTIVE_SERVER_HOSTS.get(i),
                              ACTIVE_SERVER_PORTS.get(i));
               serverSocketConnection.setSoTimeout(2000);
@@ -141,6 +143,7 @@ public class LoadBalancer {
           clientSocket.close();
           break;
 
+        // get file from first available server
         case "GET":
           String getFileName = dis.readUTF();
           boolean fileSent = false;
@@ -219,19 +222,15 @@ public class LoadBalancer {
     }
   }
 
+  // thread to check status of all servers in program
   public static class ReqStatus extends TimerTask {
-
+    // index of the leader
     public static int leader = 0;
-
-    // static String[][] fileContents = new String[3][];
 
     @Override
     public void run() {
-      // TODO Auto-generated method stub
-      // System.out.println("Hello World");
       try {
         checkServerStatus();
-        // TODO: Update the Active ports list
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -240,7 +239,6 @@ public class LoadBalancer {
     public static void checkServerStatus() throws IOException {
       ArrayList<Integer> active_ports = new ArrayList<>();
       ArrayList<String> active_hosts = new ArrayList<>();
-      // ArrayList<String[]> fileContents = new ArrayList<>();
       HashMap<Integer, String[]> fileContents = new HashMap();
       for (int i = 0; i < SERVER_PORTS.length; i++) {
         // Connect to each server
@@ -250,15 +248,13 @@ public class LoadBalancer {
           serverSocketConnection.setSoTimeout(2000);
           System.out.println("Connected to server on port " + SERVER_PORTS[i]);
 
-          // Transfer the filename, filesize, and file to the server
           DataOutputStream out =
               new DataOutputStream(serverSocketConnection.getOutputStream());
           DataInputStream in =
               new DataInputStream(serverSocketConnection.getInputStream());
-          // Write the file content to the server
+          // Write the request content to the server
           out.writeUTF("STATUS");
-
-          // Receive and print the string array
+          // read the status response from the server which contatins the db content of all the servers
           int arrayLength = in.readInt();
           String[] documentNames = new String[arrayLength];
           for (int j = 0; j < arrayLength; j++) {
@@ -274,10 +270,6 @@ public class LoadBalancer {
             serverStatus.put(SERVER_PORTS[i], true);
           }
 
-          // fileContents[i] = Arrays.copyOf(documentNames,
-          // documentNames.length);
-
-          // fileContents.add(documentNames);
           fileContents.put(SERVER_PORTS[i], documentNames);
 
           // Print the received array
@@ -293,8 +285,6 @@ public class LoadBalancer {
           serverSocketConnection.close();
 
         } catch (SocketException s) {
-          // if (serverStatus.get(SERVER_PORTS[i]) == true){
-          // }
           // Change the server state to false
           if (serverStatus.get(SERVER_PORTS[i])) {
             removeServer(SERVER_PORTS[i]);
@@ -321,20 +311,15 @@ public class LoadBalancer {
 
       System.out.println(
           "----------------------------------------------------");
-      // for (int i = 0; i < active_ports.size(); i++) {
       for (int i = 0; i < ACTIVE_SERVER_PORTS.size(); i++) {
-        // System.out.println("Active host: " + active_hosts.get(i) +
         System.out.println("Active host: " + ACTIVE_SERVER_HOSTS.get(i) +
-                           // ", port: " + active_ports.get(i));
                            ", port: " + ACTIVE_SERVER_PORTS.get(i));
-        // for (int j = 0; j < fileContents.get(i).length; j++) {
         int fileContents_len =
             fileContents.get(ACTIVE_SERVER_PORTS.get(i)).length;
         if (fileContents_len > 0) {
                     System.out.print("file_contents: ");
           for (int j = 0;
                j < fileContents.get(ACTIVE_SERVER_PORTS.get(i)).length; j++) {
-            // System.out.println(fileContents.get(i)[j]);
             System.out.print(
                 fileContents.get(ACTIVE_SERVER_PORTS.get(i))[j] + " ");
           }
@@ -345,56 +330,31 @@ public class LoadBalancer {
           "----------------------------------------------------");
 
       HashMap<Integer, String[][]> differences = new HashMap<>();
-      // int active_servers = active_ports.size();
       int active_servers = ACTIVE_SERVER_PORTS.size();
       // Assuming the first active server is always the leader for simplicity
       // If the leader might not be the first server, adjust the logic to select
       // the leader based on your criteria
       for (int i = 1; i < active_servers; i++) {
-        // if (i != leader) { // Skip comparing the leader to itself
-        // differences.put(
-        //     i, compareArrays(fileContents.get(leader), fileContents.get(i)));
         differences.put(
             i, compareArrays(fileContents.get(leader_port),
                              fileContents.get(ACTIVE_SERVER_PORTS.get(i))));
-        // }
+        
       }
-      // Iterate over the HashMap
-      // for (Map.Entry<Integer, String[][]> entry : differences.entrySet()) {
-      //   Integer key = entry.getKey();
-      //   String[][] value = entry.getValue();
 
-      //   System.out.println("Key: " + key);
-      //   System.out.println("Values: ");
-      //   for (int i = 0; i < value.length; i++) {
-      //     String type = (i == 0) ? "Plus" : "Minus";
-      //     System.out.println("  " + type + " values:");
-      //     for (String val : value[i]) {
-      //       System.out.println("    " + val);
-      //     }
-      //   }
-      // }
       for (int i : differences.keySet()) {
-        // System.out.println("keySet iteration for index: " + i);
         String[][] difArray = differences.get(i);
-        // System.out.println(": diffArraray[0].length: " + difArray[0].length);
-        // System.out.println(": diffArraray[1].length: " + difArray[1].length);
         // Check if any file needs to be uploaded to replicas
         if (difArray[0].length != 0) {
 
           for (int j = 0; j < difArray[0].length; j++) {
             String filename = difArray[0][j];
-            // Socket toLeader = new Socket(SERVER_HOSTS[leader],
-            // SERVER_PORTS[leader]);
-            // Socket toLeader = new Socket("localhost",
-            // active_ports.get(leader));
             Socket toLeader = new Socket(ACTIVE_SERVER_HOSTS.get(leader),
                                          ACTIVE_SERVER_PORTS.get(leader));
             DataInputStream dis =
                 new DataInputStream(toLeader.getInputStream());
             DataOutputStream dos =
                 new DataOutputStream(toLeader.getOutputStream());
-
+            // get file from leader server
             dos.writeUTF("GET");
             dos.writeUTF(filename);
 
@@ -404,15 +364,12 @@ public class LoadBalancer {
 
             toLeader.close();
 
-            // Socket toReplica = new Socket(SERVER_HOSTS[i], SERVER_PORTS[i]);
-            // Socket toReplica = new Socket("localhost", active_ports.get(i));
             Socket toReplica =
                 new Socket(ACTIVE_SERVER_HOSTS.get(i), ACTIVE_SERVER_PORTS.get(i));
-            // DataInputStream replicaInput = new
-            // DataInputStream(toReplica.getInputStream());
+
             DataOutputStream replicaOutput =
                 new DataOutputStream(toReplica.getOutputStream());
-
+            // replicate missing files on replicas
             replicaOutput.writeUTF("UPLOAD");
             replicaOutput.writeUTF(filename);
             replicaOutput.writeLong(filesize);
@@ -423,12 +380,9 @@ public class LoadBalancer {
         }
         // Check if any file needs do be deleted from the replicas
         if (difArray[1].length != 0) {
+          // delete extra files on replicas
           for (int j = 0; j < difArray[1].length; j++) {
             String filename = difArray[1][j];
-            // Socket deleteSocket = new Socket(SERVER_HOSTS[i],
-            // SERVER_PORTS[i]);
-            // Socket deleteSocket = new Socket("localhost",
-            // active_ports.get(i));
             Socket deleteSocket =
                 new Socket(ACTIVE_SERVER_HOSTS.get(i), ACTIVE_SERVER_PORTS.get(i));
 
@@ -442,7 +396,7 @@ public class LoadBalancer {
         }
       }
     }
-
+    // compare replica server dbs to leader server db
     public static String[][] compareArrays(String[] base, String[] compare) {
       HashSet<String> baseSet = new HashSet<>();
       HashSet<String> compareSet = new HashSet<>();
@@ -472,8 +426,8 @@ public class LoadBalancer {
       }
 
       String[][] result = new String[2][];
-      result[0] = plusValues.toArray(new String[0]);  // "+" values
-      result[1] = minusValues.toArray(new String[0]); // "-" values
+      result[0] = plusValues.toArray(new String[0]);  // "+" (add file) values
+      result[1] = minusValues.toArray(new String[0]); // "-" (remove file) values
 
       return result;
     }
